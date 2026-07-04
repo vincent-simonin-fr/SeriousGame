@@ -5,9 +5,9 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/src/">
-    <Project Path="src/Client/Client.csproj" />
-    <Project Path="src/Server/Server.csproj" />
-    <Project Path="src/Shared/Shared.csproj" />
+    <Project Path="src/SeriousGame.Client/SeriousGame.Client.csproj" />
+    <Project Path="src/SeriousGame.Server/SeriousGame.Server.csproj" />
+    <Project Path="src/SeriousGame.Shared/SeriousGame.Shared.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/SeriousGame.AcceptanceTests/SeriousGame.AcceptanceTests.csproj" />

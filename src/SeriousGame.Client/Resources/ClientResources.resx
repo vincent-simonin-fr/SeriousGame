@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<root>
+    <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+        <xsd:element name="root" msdata:IsDataSet="true">
+            
+        </xsd:element>
+    </xsd:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <data name="GameName" xml:space="preserve">
+        <value>__        ___             ____          ____            _                   _
+ \ \      / / |__  _   _  / ___|  ___   / ___|  ___ _ __(_) ___  _   _ ___  | |
+  \ \ /\ / /| '_ \| | | | \___ \ / _ \  \___ \ / _ \ '__| |/ _ \| | | / __| | |
+   \ V  V / | | | | |_| |  ___) | (_) |  ___) |  __/ |  | | (_) | |_| \__ \ |_|
+    \_/\_/  |_| |_|\__, | |____/ \___/  |____/ \___|_|  |_|\___/ \__,_|___/ (_)
+                   |___/                                                       </value>
+    </data>
+    <data name="WindowTitle" xml:space="preserve">
+        <value>🎮 Why So Serious!</value>
+    </data>
+    <data name="GoodbyeMessage" xml:space="preserve">
+        <value>Good bye {0}! See you soon!.</value>
+    </data>
+    <data name="ChooseLoginPrompt" xml:space="preserve">
+        <value>Choose your login:</value>
+    </data>
+    <data name="MainMenuHeader" xml:space="preserve">
+        <value>Main menu</value>
+    </data>
+    <data name="MenuOptionCreateGame" xml:space="preserve">
+        <value>1. Create a game</value>
+    </data>
+    <data name="MenuOptionJoinGame" xml:space="preserve">
+        <value>2. Join a game</value>
+    </data>
+    <data name="MenuOptionQuit" xml:space="preserve">
+        <value>3. Quit</value>
+    </data>
+    <data name="YourChoicePrompt" xml:space="preserve">
+        <value>
+Your choice:</value>
+    </data>
+    <data name="InvalidChoiceError" xml:space="preserve">
+        <value>Your choice isn't valid.</value>
+    </data>
+    <data name="ExitPrompt" xml:space="preserve">
+        <value>Type a message (‘exit’ to quit):</value>
+    </data>
+    <data name="WaitingForGameHeader" xml:space="preserve">
+        <value>🕹 Waiting for game {0}</value>
+    </data>
+    <data name="PlayersWaitingPrompt" xml:space="preserve">
+        <value>Players ({0}/{1}) : {2}</value>
+    </data>
+    <data name="GameStartingMessage" xml:space="preserve">
+        <value>
+🚀 The Game {0} starts!</value>
+    </data>
+    <data name="ServerMessagePrefix" xml:space="preserve">
+        <value>[From the Server] {0}</value>
+    </data>
+    <data name="ReconnectingWarning" xml:space="preserve">
+        <value>⚠️ Reconnecting...</value>
+    </data>
+    <data name="ReconnectedMessage" xml:space="preserve">
+        <value>🔗 Reconnected!</value>
+    </data>
+    <data name="ConnectedToHubMessage" xml:space="preserve">
+        <value>Connected to the Hub: {0}</value>
+    </data>
+    <data name="FailedToConnectError" xml:space="preserve">
+        <value>Failed to connect to Hub: {0}. If the problem persists, please contact an administrator.</value>
+    </data>
+    <data name="ChooseGameNamePrompt" xml:space="preserve">
+        <value>Choose a name for your game:</value>
+    </data>
+    <data name="GameCreatedMessage" xml:space="preserve">
+        <value>🧩 Game {0} created, waiting for other players...</value>
+    </data>
+    <data name="NoGamesAvailableMessage" xml:space="preserve">
+        <value>No game available at this time.</value>
+    </data>
+    <data name="GamesAvailableHeader" xml:space="preserve">
+        <value>
+Games available:
+</value>
+    </data>
+    <data name="GameListItemFormat" xml:space="preserve">
+        <value>{0}. {1} ({2}/{3})</value>
+    </data>
+    <data name="ReturnToMainMenuFormat" xml:space="preserve">
+        <value>{0}. Return to the main menu.
+</value>
+    </data>
+    <data name="EnterGameNumberPrompt" xml:space="preserve">
+        <value>Enter the number of the game you want to join: </value>
+    </data>
+    <data name="CannotJoinGameError" xml:space="preserve">
+        <value>Cannot join game {0}. Shoot again!</value>
+    </data>
+    <data name="JoinedGameMessage" xml:space="preserve">
+        <value>🔗 You have joined the game {0}</value>
+    </data>
+    <data name="InvalidChoiceMessage" xml:space="preserve">
+        <value>Choice is invalid.</value>
+    </data>
+    <data name="CreateCompanyHeader" xml:space="preserve">
+        <value>Create your company</value>
+    </data>
+    <data name="CompanyNamePrompt" xml:space="preserve">
+        <value>Enter the name of the company:</value>
+    </data>
+    <data name="CannotInvokeError" xml:space="preserve">
+        <value>Cannot invoke '{0}': connection state = {1}</value>
+    </data>
+    <data name="HubExceptionError" xml:space="preserve">
+        <value>HubException while invoking '{0}': {1}</value>
+    </data>
+    <data name="InvalidOperationError" xml:space="preserve">
+        <value>Invalid operation during '{0}': {1}</value>
+    </data>
+    <data name="UnexpectedError" xml:space="preserve">
+        <value>Unexpected error while sending '{0}': {1}</value>
+    </data>
+    <data name="DisconnectedFromLobbyMessage" xml:space="preserve">
+        <value>You have been disconnected from the lobby.</value>
+    </data>
+    <data name="NotLoggedInLabel" xml:space="preserve">
+        <value>Not logged in</value>
+    </data>
+    <data name="WaitingAnimationLabel" xml:space="preserve">
+        <value>Waiting for other players</value>
+    </data>
+</root>

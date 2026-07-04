@@ -11,6 +11,7 @@ client_id*.txt
 .DS_Store
 
 .claude/
+CLAUDE.md
 
 openspec/
 

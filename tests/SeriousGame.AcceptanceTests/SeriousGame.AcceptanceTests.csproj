@@ -19,9 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Client\Client.csproj" />
-    <ProjectReference Include="..\..\src\Server\Server.csproj" />
-    <ProjectReference Include="..\..\src\Shared\Shared.csproj" />
+    <ProjectReference Include="..\..\src\SeriousGame.Client\SeriousGame.Client.csproj" />
+    <ProjectReference Include="..\..\src\SeriousGame.Shared\SeriousGame.Shared.csproj" />
   </ItemGroup>
 
 </Project>

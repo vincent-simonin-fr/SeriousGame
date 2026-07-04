@@ -28,7 +28,11 @@ public class PlayerService
 
     public Game? RemovePlayerFromGame(string connectionId)
     {
-        var player = _playerRepository.GetAll().First(p => p.ConnectionId == connectionId);
+        // FirstOrDefault : une connexion jamais identifiée (aucun Player associé) ne doit pas
+        // faire planter le disconnect ni le leave - simple no-op.
+        var player = _playerRepository.GetAll().FirstOrDefault(p => p.ConnectionId == connectionId);
+        if (player is null) return null;
+
         var game = _gameRepository.GetAll().FirstOrDefault(g => g.Players.Select(p => p.Id).Contains(player.Id));
 
         if (game?.Players.Count == 1)

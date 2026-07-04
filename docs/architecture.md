@@ -156,6 +156,7 @@ End
                          │───────────────────────────────│
                          │ + CreateGame(cmd, connId)     │
                          │ + JoinGame(cmd, connId)       │
+                         │ + LeaveGame(connId)           │
                          │ + HandlePlayerDisconnect(id)  │
                          │ - NotifyLobbyGamesUpdated()   │
                          └───────────────▲───────────────┘

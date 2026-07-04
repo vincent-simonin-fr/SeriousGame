@@ -8,8 +8,8 @@ using Shared.Models.Dtos;
 namespace Server.Application.Services;
 
 /// <summary>
-/// Unique implémentation du flux create/join/disconnect du lobby, consolidant
-/// ce qui était autrefois dupliqué entre la logique inline de LobbyHub et l'ancien GameFlowService (inutilisé).
+/// Unique implémentation du flux du lobby : toute la logique métier create/join/leave/disconnect vit ici,
+/// LobbyHub n'étant qu'un adaptateur.
 /// </summary>
 public class LobbyFlowService : ILobbyFlowService
 {
@@ -80,6 +80,30 @@ public class LobbyFlowService : ILobbyFlowService
         await _hub.Clients.Group(game.Id).GameStarting(startingDto);
 
         return startingDto;
+    }
+
+    public async Task LeaveGame(string connectionId)
+    {
+        var game = _playerService.RemovePlayerFromGame(connectionId);
+        if (game is null) return;
+
+        // Contrairement au disconnect, le joueur reste connecté : il faut le retirer
+        // explicitement du groupe SignalR, sinon il continuerait de recevoir les broadcasts.
+        await _hub.Groups.RemoveFromGroupAsync(connectionId, game.Id);
+        await NotifyLobbyGamesUpdated();
+
+        var gameDto = Mapper.ToDto(game);
+
+        if (game.IsInProgress)
+        {
+            // Fenêtre de course : la partie a démarré pendant que le joueur annulait.
+            await _hub.Clients.Group(game.Id).UpdateGameInProgressWhenPlayerQuits(gameDto);
+        }
+        else if (game.Players.Count > 0)
+        {
+            await _hub.Clients.Group(game.Id)
+                .WaitingForPlayers(gameDto, game.Players.Select(p => p.Nickname).ToList());
+        }
     }
 
     public async Task HandlePlayerDisconnect(string connectionId)

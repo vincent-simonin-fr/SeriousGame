@@ -272,5 +272,17 @@ namespace Client.Resources {
                 return ResourceManager.GetString("WaitingAnimationLabel", resourceCulture);
             }
         }
+
+        internal static string CancelWaitingHint {
+            get {
+                return ResourceManager.GetString("CancelWaitingHint", resourceCulture);
+            }
+        }
+
+        internal static string LeftGameMessageFormat {
+            get {
+                return ResourceManager.GetString("LeftGameMessageFormat", resourceCulture);
+            }
+        }
     }
 }

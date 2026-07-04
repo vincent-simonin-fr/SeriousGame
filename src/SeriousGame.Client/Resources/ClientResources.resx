@@ -142,4 +142,10 @@ Games available:
     <data name="WaitingAnimationLabel" xml:space="preserve">
         <value>Waiting for other players</value>
     </data>
+    <data name="CancelWaitingHint" xml:space="preserve">
+        <value>Press Esc to cancel waiting and return to the main menu.</value>
+    </data>
+    <data name="LeftGameMessageFormat" xml:space="preserve">
+        <value>You left the game {0}.</value>
+    </data>
 </root>

@@ -1,6 +1,6 @@
 # Why So Serious
 
-This repository contains two applications developed using .NET 9:
+This repository contains two applications developed using .NET 10:
 1. **WebAPI**: A backend API for handling data and WebSocket connections.
 2. **CLI**: A command-line application that communicates with the WebAPI using SignalR.
 
@@ -17,7 +17,7 @@ This repository contains two applications developed using .NET 9:
 
 ## Prerequisites
 Before you begin, ensure you have the following installed on your machine:
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Docker](https://www.docker.com/get-started)
 - [Git](https://git-scm.com/)
 
@@ -192,7 +192,7 @@ End
 Navigate to the Server project directory:
 
 ```bash
-cd Server
+cd src/Server
 ```
 
 Update the appsettings.json file if necessary (default configuration connects to PostgreSQL via localhost).
@@ -210,7 +210,7 @@ The WebAPI will start running on https://localhost:7032 (as per your configurati
 Navigate to the Client project directory:
 
 ```bash
-cd Client
+cd src/Client
 ```
 
 Ensure the appsettings.json file contains the correct API and WebSocket server configuration. The default points to the WebAPI running locally.

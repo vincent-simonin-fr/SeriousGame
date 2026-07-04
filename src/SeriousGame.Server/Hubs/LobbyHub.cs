@@ -50,6 +50,11 @@ public sealed class LobbyHub : Hub<ILobbyHubClient>, ILobbyHubServer
         return _lobbyFlowService.JoinGame(command, Context.ConnectionId);
     }
 
+    public Task LeaveGame()
+    {
+        return _lobbyFlowService.LeaveGame(Context.ConnectionId);
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         await base.OnDisconnectedAsync(exception);

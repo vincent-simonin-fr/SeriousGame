@@ -19,6 +19,7 @@ public class LobbyServices : ILobbyServices
     private readonly ILogger<LobbyServices> _logger;
     private HubConnection _lobbyConnection;
     private TaskCompletionSource? _gameStartingSignal;
+    private readonly ConsoleAnimator _waitingAnim;
     public static string[] Dots => [".", "..", "...", "....", "....."];
     private static string[] Bounce => ["⬤     ", " ⬤    ", "  ⬤   ", "   ⬤  ", "    ⬤ ", "     ⬤", "    ⬤ ", "   ⬤  ", "  ⬤   ", " ⬤    "];
 
@@ -32,13 +33,15 @@ public class LobbyServices : ILobbyServices
             .WithAutomaticReconnect()
             .Build();
 
+        // Champ (et non variable locale de RegisterHandlers) : le chemin d'annulation (Échap)
+        // doit pouvoir stopper l'animation, pas seulement le handler GameStarting.
+        _waitingAnim = new ConsoleAnimator(ClientResources.WaitingAnimationLabel, Bounce, 200);
+
         RegisterHandlers();
     }
 
     private void RegisterHandlers()
     {
-        var waitingAnim = new ConsoleAnimator(ClientResources.WaitingAnimationLabel, Bounce, 200);
-
         _lobbyConnection.On<List<GameDto>>(nameof(ILobbyHubClient.GamesUpdated), games =>
         {
             ClientMemory.Games = games;
@@ -48,12 +51,12 @@ public class LobbyServices : ILobbyServices
         {
             ConsoleUI.WriteHeader(string.Format(ClientResources.WaitingForGameHeader, game.Name));
             ConsoleUI.WritePrompt(string.Format(ClientResources.PlayersWaitingPrompt, playerNames.Count, game.MinimumPlayers, string.Join(", ", playerNames)));
-            waitingAnim.Start();
+            _waitingAnim.Start();
         });
 
         _lobbyConnection.On<GameDto>(nameof(ILobbyHubClient.GameStarting), game =>
         {
-            waitingAnim.Stop();
+            _waitingAnim.Stop();
             ConsoleUI.WriteInfo(string.Format(ClientResources.GameStartingMessage, game.Name));
             _gameStartingSignal?.TrySetResult();
         });
@@ -180,13 +183,46 @@ public class LobbyServices : ILobbyServices
         _gameStartingSignal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
-    public async Task WaitForGameStartAsync()
+    public async Task<bool> WaitForGameStartAsync()
     {
-        if (_gameStartingSignal is null) return;
+        if (_gameStartingSignal is null) return true;
 
-        // Pas de timeout : Ctrl+C reste la porte de sortie. Remplace l'ancien busy-wait
-        // qui tournait à vide sur Players.Count (gel CPU, jamais réveillé).
-        await _gameStartingSignal.Task;
+        // KeyAvailable lève une exception quand stdin est redirigé (exécution scriptée) :
+        // dans ce cas la détection clavier est désactivée et on attend uniquement le signal.
+        var canReadKeys = !Console.IsInputRedirected;
+        if (canReadKeys) ConsoleUI.WritePrompt(ClientResources.CancelWaitingHint);
+
+        while (!_gameStartingSignal.Task.IsCompleted)
+        {
+            if (canReadKeys && Console.KeyAvailable)
+            {
+                // intercept: true - la touche n'est pas affichée dans la console.
+                var key = Console.ReadKey(intercept: true);
+                if (key.Key == ConsoleKey.Escape)
+                {
+                    _waitingAnim.Stop();
+                    return false;
+                }
+                // Toute autre touche est consommée et ignorée (n'encombre pas la saisie du menu).
+            }
+
+            // Sondage léger : 10 vérifications/s, le thread dort entre deux.
+            await Task.Delay(100);
+        }
+
+        // Le signal gagne sur Échap si les deux surviennent dans la même fenêtre.
+        return true;
+    }
+
+    public async Task LeaveGameAsync()
+    {
+        if (ClientMemory.CurrentGame is null) return;
+
+        var gameName = ClientMemory.CurrentGame.Name;
+        await _lobbyConnection.InvokeAsync(nameof(ILobbyHubServer.LeaveGame));
+        ClientMemory.CurrentGame = null;
+
+        ConsoleUI.WriteInfo(string.Format(ClientResources.LeftGameMessageFormat, gameName));
     }
 
     private async Task CreatePlayerCompanyAsync()

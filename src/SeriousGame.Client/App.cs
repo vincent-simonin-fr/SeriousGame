@@ -74,11 +74,16 @@ public class App
         switch (result)
         {
             case EnrollmentResult.WaitingForPlayers:
-                await _lobbyServices.WaitForGameStartAsync();
-                // La boucle de partie (tours) n'existe pas encore - retour au menu.
+                var started = await _lobbyServices.WaitForGameStartAsync();
+                if (!started)
+                {
+                    // Le joueur a annulé l'attente (Échap) : quitter proprement la partie côté serveur.
+                    await _lobbyServices.LeaveGameAsync();
+                }
+                // Démarrée ou annulée : retour au menu (la boucle de partie n'existe pas encore).
                 break;
             case EnrollmentResult.GameStarting:
-                // Idem : point d'entrée de la future boucle de partie.
+                // Point d'entrée de la future boucle de partie.
                 break;
             // Failed / NoGamesAvailable / ReturnToMenu : retour direct au menu.
         }

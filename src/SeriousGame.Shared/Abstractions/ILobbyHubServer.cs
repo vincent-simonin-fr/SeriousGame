@@ -11,4 +11,5 @@ public interface ILobbyHubServer
     Task UpdatePlayerConnectionId(string clientId);
     Task<GameDto> CreateGame(CreateGameCommand command);
     Task<GameDto?> JoinGame(JoinGameCommand command);
+    Task LeaveGame();
 }

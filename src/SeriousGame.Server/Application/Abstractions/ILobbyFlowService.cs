@@ -3,8 +3,7 @@ using Shared.Models.Dtos;
 namespace Server.Application.Abstractions;
 
 /// <summary>
-/// Consolide le flux create/join/disconnect du lobby, qui était autrefois
-/// dupliqué entre la logique inline de LobbyHub et l'ancien GameFlowService (inutilisé).
+/// Flux du lobby : création/join/leave d'une partie et gestion des déconnexions.
 /// </summary>
 public interface ILobbyFlowService
 {
@@ -13,5 +12,6 @@ public interface ILobbyFlowService
     Task UpdatePlayerConnectionId(string clientId, string connectionId);
     Task<GameDto> CreateGame(CreateGameCommand command, string connectionId);
     Task<GameDto?> JoinGame(JoinGameCommand command, string connectionId);
+    Task LeaveGame(string connectionId);
     Task HandlePlayerDisconnect(string connectionId);
 }

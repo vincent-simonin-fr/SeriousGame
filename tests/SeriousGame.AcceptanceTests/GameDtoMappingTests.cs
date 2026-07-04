@@ -3,8 +3,8 @@ using Shared.Models.Dtos;
 
 namespace SeriousGame.AcceptanceTests;
 
-// Placeholder acceptance coverage: a full Client<->Server SignalR round trip
-// is a natural follow-up, not scaffolded here to avoid scope creep.
+// Couverture d'acceptation placeholder : un aller-retour SignalR complet Client<->Server
+// est un suivi naturel, non scaffoldé ici pour éviter le scope creep.
 public class GameDtoMappingTests
 {
     [Fact]

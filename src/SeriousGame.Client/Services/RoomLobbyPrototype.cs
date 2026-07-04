@@ -5,17 +5,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Client.Services;
 
-// Unused prototype: a self-contained, in-memory "room" lobby (Guid-keyed, no link to the real
-// Game/Player models or the actual SignalR hub). Superseded by LobbyServices, which is what
-// GameClientApp actually uses. Kept for reference, not wired into the app - see CLAUDE.md.
+// Prototype inutilisé : un lobby "room" autonome en mémoire (indexé par Guid, sans lien avec les vrais
+// modèles Game/Player ni le vrai hub SignalR). Remplacé par LobbyServices, qui est ce que
+// GameClientApp utilise réellement. Gardé pour référence, non branché à l'app - voir CLAUDE.md.
 
 /// <summary>
-/// Lightweight DTO exposed to callers (immutable view).
+/// DTO léger exposé aux appelants (vue immuable).
 /// </summary>
 public sealed record GameRoomDto(Guid Id, string Name, string OwnerClientId, ImmutableList<string> Players, int MaxPlayers);
 
 /// <summary>
-/// Event args published when lobby rooms change. Contains a snapshot to avoid callers mutating internal state.
+/// Arguments d'événement publiés quand les rooms du lobby changent. Contient un snapshot pour éviter que les appelants ne modifient l'état interne.
 /// </summary>
 public sealed class RoomsChangedEventArgs : EventArgs
 {
@@ -28,11 +28,11 @@ public sealed class RoomsChangedEventArgs : EventArgs
 }
 
 /// <summary>
-/// Robust, concurrent lobby implementation:
-/// - Uses ConcurrentDictionary for room lookup.
-/// - Uses per-room SemaphoreSlim to avoid global locking.
-/// - Publishes RoomsChanged events with snapshots.
-/// - Performs validation and logs important transitions.
+/// Implémentation de lobby robuste et concurrente :
+/// - Utilise ConcurrentDictionary pour la recherche de room.
+/// - Utilise un SemaphoreSlim par room pour éviter un verrou global.
+/// - Publie des événements RoomsChanged avec des snapshots.
+/// - Effectue de la validation et logue les transitions importantes.
 /// </summary>
 public sealed class LobbyService : ILobbyService, IDisposable
 {
@@ -75,13 +75,13 @@ public sealed class LobbyService : ILobbyService, IDisposable
         if (!_rooms.TryAdd(id, room))
             throw new InvalidOperationException("Failed to create room due to concurrent modification.");
 
-        // create semaphore for the room
+        // créer le semaphore pour la room
         _roomLocks.TryAdd(id, new SemaphoreSlim(1, 1));
 
         _logger.LogInformation("Room created {RoomId} ({Name}) by {Owner}", id, name, ownerClientId);
         PublishRoomsChangedSnapshot();
 
-        // return an immutable snapshot
+        // renvoyer un snapshot immuable
         return ToDto(room);
     }
 
@@ -120,7 +120,7 @@ public sealed class LobbyService : ILobbyService, IDisposable
         {
             if (!room.Players.Remove(clientId)) return;
 
-            // if owner left and there are players remaining, promote first player to owner
+            // si le owner est parti et qu'il reste des joueurs, promouvoir le premier joueur comme owner
             if (room.OwnerClientId == clientId)
             {
                 room.OwnerClientId = room.Players.FirstOrDefault() ?? string.Empty;
@@ -133,7 +133,7 @@ public sealed class LobbyService : ILobbyService, IDisposable
             sem.Release();
         }
 
-        // remove empty rooms to keep model tidy
+        // supprimer les rooms vides pour garder le modèle propre
         if (room.Players.Count == 0)
             await RemoveRoomAsync(roomId, cancellationToken).ConfigureAwait(false);
         else
@@ -144,7 +144,7 @@ public sealed class LobbyService : ILobbyService, IDisposable
     {
         if (!_rooms.TryRemove(roomId, out var removed)) return false;
 
-        // dispose lock if present
+        // dispose du lock s'il est présent
         if (_roomLocks.TryRemove(roomId, out var sem))
         {
             try { sem.Dispose(); } catch { /* ignore */ }
@@ -186,7 +186,7 @@ public sealed class LobbyService : ILobbyService, IDisposable
         _rooms.Clear();
     }
 
-    // internal mutable model protected by per-room semaphore
+    // modèle mutable interne protégé par un semaphore par room
     sealed class LobbyRoom
     {
         public Guid Id { get; }

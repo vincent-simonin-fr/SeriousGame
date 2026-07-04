@@ -1,7 +1,7 @@
 namespace Client;
 
 /// <summary>
-/// Non-UI literal values that aren't config (see appsettings.json / WebSocketServerOptions for that).
+/// Valeurs littérales hors UI qui ne sont pas de la config (voir appsettings.json / WebSocketServerOptions pour ça).
 /// </summary>
 public static class Constants
 {

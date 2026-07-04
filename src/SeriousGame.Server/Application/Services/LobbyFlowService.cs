@@ -8,8 +8,8 @@ using Shared.Models.Dtos;
 namespace Server.Application.Services;
 
 /// <summary>
-/// Single implementation of the lobby create/join/disconnect flow, consolidating
-/// what used to be duplicated between LobbyHub's inline logic and the unused GameFlowService.
+/// Unique implémentation du flux create/join/disconnect du lobby, consolidant
+/// ce qui était autrefois dupliqué entre la logique inline de LobbyHub et l'ancien GameFlowService (inutilisé).
 /// </summary>
 public class LobbyFlowService : ILobbyFlowService
 {
@@ -128,7 +128,7 @@ public class LobbyFlowService : ILobbyFlowService
         }
         catch
         {
-            // Ignore - the client may already be fully offline.
+            // Ignoré - le client est peut-être déjà complètement déconnecté.
         }
     }
 }

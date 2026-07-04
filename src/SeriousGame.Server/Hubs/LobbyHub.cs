@@ -7,7 +7,7 @@ using Shared.Models.Dtos;
 namespace Server.Hubs;
 
 /// <summary>
-/// Thin SignalR adapter: parses each call and delegates all business logic to ILobbyFlowService.
+/// Adaptateur SignalR fin : parse chaque appel et délègue toute la logique métier à ILobbyFlowService.
 /// </summary>
 public sealed class LobbyHub : Hub<ILobbyHubClient>, ILobbyHubServer
 {

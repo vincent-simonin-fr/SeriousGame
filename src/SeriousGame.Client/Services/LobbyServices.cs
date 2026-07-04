@@ -18,6 +18,7 @@ public class LobbyServices : ILobbyServices
     private readonly string _hubUrl;
     private readonly ILogger<LobbyServices> _logger;
     private HubConnection _lobbyConnection;
+    private TaskCompletionSource? _gameStartingSignal;
     public static string[] Dots => [".", "..", "...", "....", "....."];
     private static string[] Bounce => ["⬤     ", " ⬤    ", "  ⬤   ", "   ⬤  ", "    ⬤ ", "     ⬤", "    ⬤ ", "   ⬤  ", "  ⬤   ", " ⬤    "];
 
@@ -54,6 +55,7 @@ public class LobbyServices : ILobbyServices
         {
             waitingAnim.Stop();
             ConsoleUI.WriteInfo(string.Format(ClientResources.GameStartingMessage, game.Name));
+            _gameStartingSignal?.TrySetResult();
         });
 
         _lobbyConnection.On<string>(nameof(ILobbyHubClient.Notify), msg =>
@@ -104,57 +106,87 @@ public class LobbyServices : ILobbyServices
         await _lobbyConnection.InvokeAsync(nameof(ILobbyHubServer.IdentifyNewPlayer), command);
     }
 
-    public async Task CreateGameAsync()
+    public async Task<EnrollmentResult> CreateGameAsync()
     {
         ConsoleUI.WritePrompt(ClientResources.ChooseGameNamePrompt);
         var gameName = ConsoleUI.ReadPrompt() ?? $"Game_{Guid.NewGuid().ToString()[..6]}";
+
+        PrepareGameStartSignal();
 
         var command = new CreateGameCommand { PlayerId = ClientIdentity.Id, GameName = gameName };
         ClientMemory.CurrentGame = await _lobbyConnection.InvokeAsync<GameDto>(nameof(ILobbyHubServer.CreateGame), command);
 
         ConsoleUI.WriteInfo(string.Format(ClientResources.GameCreatedMessage, gameName));
 
-        await StartGameAsync();
+        return ClientMemory.CurrentGame.IsInProgress
+            ? EnrollmentResult.GameStarting
+            : EnrollmentResult.WaitingForPlayers;
     }
 
-    public async Task DisplayAndJoinGameAsync()
+    public async Task<EnrollmentResult> JoinGameAsync()
     {
-        if (ClientMemory.Games.Count == 0)
+        // Snapshot local : GamesUpdated peut remplacer la liste pendant la saisie.
+        var games = ClientMemory.Games;
+
+        if (games.Count == 0)
         {
             ConsoleUI.WriteInfo(ClientResources.NoGamesAvailableMessage);
-            return;
+            return EnrollmentResult.NoGamesAvailable;
         }
 
         ConsoleUI.WriteInfo(ClientResources.GamesAvailableHeader);
-        for (int i = 0; i < ClientMemory.Games.Count; i++)
-            ConsoleUI.WritePrompt(string.Format(ClientResources.GameListItemFormat, i + 1, ClientMemory.Games[i].Name, ClientMemory.Games[i].Players.Count, ClientMemory.Games[i].MinimumPlayers));
+        for (int i = 0; i < games.Count; i++)
+            ConsoleUI.WritePrompt(string.Format(ClientResources.GameListItemFormat, i + 1, games[i].Name, games[i].Players.Count, games[i].MinimumPlayers));
 
-        // TODO : Permettre au joueur de revenir au menu principal
-        ConsoleUI.WritePrompt(string.Format(ClientResources.ReturnToMainMenuFormat, ClientMemory.Games.Count + 1));
+        var returnToMenuChoice = games.Count + 1;
+        ConsoleUI.WritePrompt(string.Format(ClientResources.ReturnToMainMenuFormat, returnToMenuChoice));
 
-        ConsoleUI.WritePrompt(ClientResources.EnterGameNumberPrompt);
-
-        if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= ClientMemory.Games.Count)
+        int choice;
+        while (true)
         {
-            var selectedGame = ClientMemory.Games[choice - 1];
-            var command = new JoinGameCommand { PlayerId = ClientIdentity.Id, GameId = selectedGame.Id };
-            ClientMemory.CurrentGame = await _lobbyConnection.InvokeAsync<GameDto?>(nameof(ILobbyHubServer.JoinGame), command);
-
-            if (ClientMemory.CurrentGame is null)
-            {
-                ConsoleUI.WriteError(string.Format(ClientResources.CannotJoinGameError, selectedGame.Name));
-                await DisplayAndJoinGameAsync();
-            }
-
-            ConsoleUI.WriteInfo(string.Format(ClientResources.JoinedGameMessage, selectedGame.Name));
-
-            await StartGameAsync();
-        }
-        else
-        {
+            ConsoleUI.WritePrompt(ClientResources.EnterGameNumberPrompt);
+            if (int.TryParse(Console.ReadLine(), out choice) && choice > 0 && choice <= returnToMenuChoice)
+                break;
             ConsoleUI.WriteError(ClientResources.InvalidChoiceMessage);
-            await DisplayAndJoinGameAsync();
         }
+
+        if (choice == returnToMenuChoice)
+            return EnrollmentResult.ReturnToMenu;
+
+        var selectedGame = games[choice - 1];
+
+        PrepareGameStartSignal();
+
+        var command = new JoinGameCommand { PlayerId = ClientIdentity.Id, GameId = selectedGame.Id };
+        ClientMemory.CurrentGame = await _lobbyConnection.InvokeAsync<GameDto?>(nameof(ILobbyHubServer.JoinGame), command);
+
+        if (ClientMemory.CurrentGame is null)
+        {
+            ConsoleUI.WriteError(string.Format(ClientResources.CannotJoinGameError, selectedGame.Name));
+            return EnrollmentResult.Failed;
+        }
+
+        ConsoleUI.WriteInfo(string.Format(ClientResources.JoinedGameMessage, selectedGame.Name));
+
+        return ClientMemory.CurrentGame.IsInProgress
+            ? EnrollmentResult.GameStarting
+            : EnrollmentResult.WaitingForPlayers;
+    }
+
+    private void PrepareGameStartSignal()
+    {
+        // Créé avant l'invoke hub : le handler GameStarting peut arriver sur un thread SignalR
+        // avant que l'appelant n'atteigne le await - le signal doit déjà exister.
+        _gameStartingSignal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    }
+
+    public async Task WaitForGameStartAsync()
+    {
+        if (_gameStartingSignal is null) return;
+
+        // Pas de timeout : Ctrl+C reste la porte de sortie. Remplace l'ancien busy-wait
+        // qui tournait à vide sur Players.Count (gel CPU, jamais réveillé).
+        await _gameStartingSignal.Task;
     }
 
     private async Task CreatePlayerCompanyAsync()
@@ -163,21 +195,6 @@ public class LobbyServices : ILobbyServices
         ConsoleUI.WritePrompt(ClientResources.CompanyNamePrompt);
         var companyName = ConsoleUI.ReadPrompt();
 
-    }
-
-    private async Task StartGameAsync()
-    {
-        // TODO : Améliorer cette vérification de null
-        if (ClientMemory.CurrentGame is null) return;
-
-        while (ClientMemory.CurrentGame.Players.Count < ClientMemory.CurrentGame.MinimumPlayers)
-        {
-
-        }
-
-        // Le déroulement des tours n'est pas encore implémenté - GameDto omet volontairement Rounds (voir docs/architecture.md).
-
-        await Task.CompletedTask;
     }
 
     public async Task SendAsync(string methodName, params object[] args)

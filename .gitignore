@@ -1,0 +1,17 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+
+.idea/
+
+client_id*.txt
+
+.DS_Store
+
+.claude/
+
+openspec/
+
+*.user

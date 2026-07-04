@@ -3,8 +3,8 @@ using Shared.Models.Dtos;
 namespace Server.Application.Abstractions;
 
 /// <summary>
-/// Consolidates the lobby create/join/disconnect flow that used to be
-/// duplicated between LobbyHub's inline logic and the unused GameFlowService.
+/// Consolide le flux create/join/disconnect du lobby, qui était autrefois
+/// dupliqué entre la logique inline de LobbyHub et l'ancien GameFlowService (inutilisé).
 /// </summary>
 public interface ILobbyFlowService
 {

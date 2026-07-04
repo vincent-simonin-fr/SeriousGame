@@ -3,8 +3,8 @@ using Shared.Models.Dtos;
 namespace Shared.Abstractions;
 
 /// <summary>
-/// Represents the actions that the server can trigger
-/// and to which the client must subscribe.
+/// Représente les actions que le serveur peut déclencher
+/// et auxquelles le client doit s'abonner.
 /// </summary>
 public interface ILobbyHubClient
 {

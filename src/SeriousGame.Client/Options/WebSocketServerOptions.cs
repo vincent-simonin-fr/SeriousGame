@@ -1,7 +1,7 @@
 namespace Client.Options;
 
 /// <summary>
-/// Bound from the "WebSocketServer" section of appsettings.json.
+/// Injecté depuis la section "WebSocketServer" de appsettings.json.
 /// </summary>
 public class WebSocketServerOptions
 {

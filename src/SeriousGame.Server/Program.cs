@@ -18,7 +18,7 @@ builder.Services.AddScoped<ILobbyFlowService, LobbyFlowService>();
 
 WebApplication app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configuration du pipeline de requêtes HTTP.
 if (app.Environment.IsDevelopment())
 {
     

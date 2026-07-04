@@ -25,8 +25,8 @@ internal class Program
         using var serviceProvider = services.BuildServiceProvider();
         var webSocketServerOptions = serviceProvider.GetRequiredService<IOptions<WebSocketServerOptions>>();
 
-        // Set level to Debug for deep debugging
-        // Set to information in production
+        // Passer en Debug pour un débogage approfondi
+        // Passer en Information en production
         using var loggerFactory = LoggerFactory.Create(builder =>
         {
             builder.ClearProviders();

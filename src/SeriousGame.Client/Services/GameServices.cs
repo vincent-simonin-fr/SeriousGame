@@ -2,8 +2,8 @@ using Client.Services.Interfaces;
 
 namespace Client.Services;
 
-// Placeholder for future /game hub client logic (mirrors the server-side GameHub, itself
-// undeveloped). Not wired into GameClientApp yet - empty until in-game actions are implemented.
+// Placeholder pour la future logique client du hub /game (reflète le GameHub côté serveur,
+// lui-même non développé). Pas encore branché dans GameClientApp - vide tant que les actions en jeu ne sont pas implémentées.
 public class GameServices : IGameServices
 {
 

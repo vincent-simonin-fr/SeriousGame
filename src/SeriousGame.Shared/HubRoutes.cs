@@ -1,8 +1,8 @@
 namespace Shared;
 
 /// <summary>
-/// Hub route paths shared between the Server (MapHub) and the Client (connection URL),
-/// so the path isn't duplicated as a literal in both projects.
+/// Chemins de hub partagés entre le Server (MapHub) et le Client (URL de connexion),
+/// pour éviter de dupliquer le littéral dans les deux projets.
 /// </summary>
 public static class HubRoutes
 {

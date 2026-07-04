@@ -120,7 +120,7 @@ public class LobbyServices
         for (int i = 0; i < ClientMemory.Games.Count; i++)
             ConsoleUI.WritePrompt(string.Format(ClientResources.GameListItemFormat, i + 1, ClientMemory.Games[i].Name, ClientMemory.Games[i].Players.Count, ClientMemory.Games[i].MinimumPlayers));
 
-        // TODO: Allows to the player to return to the main menu
+        // TODO : Permettre au joueur de revenir au menu principal
         ConsoleUI.WritePrompt(string.Format(ClientResources.ReturnToMainMenuFormat, ClientMemory.Games.Count + 1));
 
         ConsoleUI.WritePrompt(ClientResources.EnterGameNumberPrompt);
@@ -158,7 +158,7 @@ public class LobbyServices
 
     private async Task StartGameAsync()
     {
-        // TODO: Improve this null check
+        // TODO : Améliorer cette vérification de null
         if (ClientMemory.CurrentGame is null) return;
 
         while (ClientMemory.CurrentGame.Players.Count < ClientMemory.CurrentGame.MinimumPlayers)
@@ -166,7 +166,7 @@ public class LobbyServices
 
         }
 
-        // Round-play isn't implemented yet - GameDto intentionally omits Rounds (see design.md).
+        // Le déroulement des tours n'est pas encore implémenté - GameDto omet volontairement Rounds (voir docs/architecture.md).
 
         await Task.CompletedTask;
     }

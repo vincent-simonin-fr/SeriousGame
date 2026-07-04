@@ -7,7 +7,7 @@ namespace Client.Services;
 
 // Prototype inutilisé : un lobby "room" autonome en mémoire (indexé par Guid, sans lien avec les vrais
 // modèles Game/Player ni le vrai hub SignalR). Remplacé par LobbyServices, qui est ce que
-// GameClientApp utilise réellement. Gardé pour référence, non branché à l'app - voir CLAUDE.md.
+// App utilise réellement. Gardé pour référence, non branché à l'app - voir CLAUDE.md.
 
 /// <summary>
 /// DTO léger exposé aux appelants (vue immuable).

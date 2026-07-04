@@ -1,4 +1,5 @@
 using Client.Resources;
+using Client.Services;
 using Client.Services.Interfaces;
 using Client.State;
 using Client.UI;
@@ -38,9 +39,9 @@ public class App
 
     private async Task MainMenuLoop()
     {
-        var hasMadeValidChoice = false;
-
-        while (!hasMadeValidChoice)
+        // Boucle d'enrôlement : chaque issue (partie jouée, échec, retour) ramène au menu,
+        // seule l'option Quitter sort de la boucle.
+        while (true)
         {
             ConsoleUI.WriteHeader(ClientResources.MainMenuHeader);
             ConsoleUI.WritePrompt(ClientResources.MenuOptionCreateGame);
@@ -53,12 +54,10 @@ public class App
             switch (input)
             {
                 case "1":
-                    await _lobbyServices.CreateGameAsync();
-                    hasMadeValidChoice = true;
+                    await HandleEnrollmentAsync(await _lobbyServices.CreateGameAsync());
                     break;
                 case "2":
-                    await _lobbyServices.DisplayAndJoinGameAsync();
-                    hasMadeValidChoice = true;
+                    await HandleEnrollmentAsync(await _lobbyServices.JoinGameAsync());
                     break;
                 case "3":
                     await _lobbyServices.DisconnectAsync();
@@ -70,6 +69,22 @@ public class App
         }
     }
 
+    private async Task HandleEnrollmentAsync(EnrollmentResult result)
+    {
+        switch (result)
+        {
+            case EnrollmentResult.WaitingForPlayers:
+                await _lobbyServices.WaitForGameStartAsync();
+                // La boucle de partie (tours) n'existe pas encore - retour au menu.
+                break;
+            case EnrollmentResult.GameStarting:
+                // Idem : point d'entrée de la future boucle de partie.
+                break;
+            // Failed / NoGamesAvailable / ReturnToMenu : retour direct au menu.
+        }
+    }
+
+    // Non branchée : boucle de chat conservée pour référence, jamais appelée.
     private async Task InteractionLoop()
     {
         while (true)

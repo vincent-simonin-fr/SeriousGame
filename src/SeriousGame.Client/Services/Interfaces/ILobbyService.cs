@@ -3,8 +3,8 @@ using Client.Services;
 namespace Client.Services.Interfaces;
 
 /// <summary>
-/// Contract for lobby domain operations. Async where operations may block or be awaited by callers.
-/// Designed to be DI-friendly and unit-testable.
+/// Contrat pour les opérations du domaine lobby. Asynchrone là où les opérations peuvent bloquer ou être attendues par les appelants.
+/// Conçu pour être DI-friendly et testable unitairement.
 /// </summary>
 public interface ILobbyService
 {

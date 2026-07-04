@@ -9,5 +9,5 @@ public class Company : BaseModel
     public int Treasury { get; private set; } = 1000000;
     public ICollection<Consultant> Staff { get; } = [];
     
-    // TODO: Add methods to increase or decrease treasury and involve the staff
+    // TODO : Ajouter des méthodes pour augmenter/diminuer la trésorerie et impliquer le staff
 }

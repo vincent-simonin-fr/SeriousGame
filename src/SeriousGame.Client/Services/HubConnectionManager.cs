@@ -23,9 +23,9 @@ public class HubConnectionManager
                 options.Transports = HttpTransportType.WebSockets;
                 options.HttpMessageHandlerFactory = _ => new HttpClientHandler
                 {
-                    // TODO : Secure fail
+                    // TODO : Échec sécurisé
                     ServerCertificateCustomValidationCallback = (_, __, ___, ____) => true
-                    // Dev only: accepter un certificat auto-signé (dangerous)
+                    // Dev uniquement : accepter un certificat auto-signé (dangereux)
                     //ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
                 };
             })
@@ -60,7 +60,7 @@ public class HubConnectionManager
 
         _lobbyHubConnection.Reconnected += async id =>
         {
-            // Update ConnectionId
+            // Mettre à jour le ConnectionId
             await _lobbyHubConnection.InvokeAsync("UpdatePlayerConnectionId", ClientIdentity.Id);
             ConsoleUI.WriteInfo("🔗 Reconnected !");
             await Task.CompletedTask;

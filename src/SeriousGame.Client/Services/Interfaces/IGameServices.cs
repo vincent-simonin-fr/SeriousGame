@@ -1,7 +1,7 @@
 namespace Client.Services.Interfaces;
 
-// Placeholder contract for future /game hub client logic - empty until in-game actions
-// (rounds, tenders, trainings) are implemented. Mirrors GameServices.
+// Contrat placeholder pour la future logique client du hub /game - vide tant que les actions en jeu
+// (tours, appels d'offres, formations) ne sont pas implémentées. Reflète GameServices.
 public interface IGameServices
 {
 }

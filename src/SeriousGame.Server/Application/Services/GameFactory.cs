@@ -3,7 +3,7 @@ using Shared.Models;
 namespace Server.Application.Services;
 
 /// <summary>
-/// Encapsulates the defaults a new Game is created with, previously inlined in GameService.CreateGame.
+/// Encapsule les valeurs par défaut de création d'un Game, auparavant codées en dur dans GameService.CreateGame.
 /// </summary>
 public static class GameFactory
 {

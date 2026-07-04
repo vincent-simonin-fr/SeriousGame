@@ -3,7 +3,7 @@ using Shared.Models.Dtos;
 namespace Shared.Abstractions;
 
 /// <summary>
-/// Represents the actions that the player can trigger
+/// Représente les actions que le joueur peut déclencher
 /// </summary>
 public interface ILobbyHubServer
 {

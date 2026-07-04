@@ -51,7 +51,7 @@ public class PlayerService
         }
         catch (Exception)
         {
-            // TODO : Log
+            // TODO : Logger
             return false;
         }
     }

@@ -1,6 +1,6 @@
 # Documentation
 
-Ce dossier regroupe la documentation destinée aux humains pour SeriousGame — un exercice pédagogique de Clean Architecture / SOLID / design patterns, sous forme de petit jeu de lobby multijoueur (serveur ASP.NET Core SignalR + client console/TUI).
+Ce dossier regroupe la documentation de SeriousGame — un serious game multijoueur où chaque joueur dirige son entreprise dans la tech et doit remporter des appels d'offres pour la développer (celui qui a le plus grand chiffre d'affaires à la fin de la partie gagne), construit comme exercice pédagogique de Clean Architecture / SOLID / design patterns (serveur ASP.NET Core SignalR + client console/TUI).
 
 Une page par sujet, reliée par des liens plutôt que dupliquée :
 

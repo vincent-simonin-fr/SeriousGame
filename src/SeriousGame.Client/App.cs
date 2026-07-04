@@ -1,25 +1,20 @@
-using Client.Options;
 using Client.Resources;
-using Client.Services;
+using Client.Services.Interfaces;
 using Client.State;
 using Client.UI;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Shared;
 
 namespace Client;
 
-public class GameClientApp
+public class App
 {
-    private readonly ILogger<GameClientApp> _logger;
-    private readonly LobbyServices _lobbyServices;
+    private readonly ILogger<App> _logger;
+    private readonly ILobbyServices _lobbyServices;
 
-    public GameClientApp(ILoggerFactory loggerFactory, IOptions<WebSocketServerOptions> webSocketServerOptions)
+    public App(ILogger<App> logger, ILobbyServices lobbyServices)
     {
-        _logger = loggerFactory.CreateLogger<GameClientApp>();
-        var options = webSocketServerOptions.Value;
-        var hubUrl = $"{options.Scheme}://{options.Domain}:{options.Port}{HubRoutes.Lobby}";
-        _lobbyServices = new LobbyServices(hubUrl);
+        _logger = logger;
+        _lobbyServices = lobbyServices;
     }
 
     public async Task RunAsync()

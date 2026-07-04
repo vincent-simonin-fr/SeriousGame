@@ -1,23 +1,31 @@
+using Client.Options;
 using Client.Resources;
+using Client.Services.Interfaces;
 using Client.State;
 using Client.UI;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Shared;
 using Shared.Abstractions;
 using Shared.Models.Dtos;
 
 namespace Client.Services;
 
-public class LobbyServices
+public class LobbyServices : ILobbyServices
 {
     private readonly string _hubUrl;
+    private readonly ILogger<LobbyServices> _logger;
     private HubConnection _lobbyConnection;
     public static string[] Dots => [".", "..", "...", "....", "....."];
     private static string[] Bounce => ["⬤     ", " ⬤    ", "  ⬤   ", "   ⬤  ", "    ⬤ ", "     ⬤", "    ⬤ ", "   ⬤  ", "  ⬤   ", " ⬤    "];
 
-    public LobbyServices(string hubUrl)
+    public LobbyServices(IOptions<WebSocketServerOptions> webSocketServerOptions, ILogger<LobbyServices> logger)
     {
-        _hubUrl = hubUrl;
+        _logger = logger;
+        var options = webSocketServerOptions.Value;
+        _hubUrl = $"{options.Scheme}://{options.Domain}:{options.Port}{HubRoutes.Lobby}";
         _lobbyConnection = new HubConnectionBuilder()
             .WithUrl(_hubUrl)
             .WithAutomaticReconnect()
@@ -81,8 +89,9 @@ public class LobbyServices
             ConsoleUI.WriteInfo(string.Format(ClientResources.ConnectedToHubMessage, _hubUrl));
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Échec de connexion au hub {HubUrl}", _hubUrl);
             ConsoleUI.WriteError(string.Format(ClientResources.FailedToConnectError, _hubUrl));
             return false;
         }
@@ -185,14 +194,17 @@ public class LobbyServices
         }
         catch (HubException hex)
         {
+            _logger.LogWarning(hex, "HubException lors de l'appel de '{MethodName}'", methodName);
             ConsoleUI.WriteError(string.Format(ClientResources.HubExceptionError, methodName, hex.Message));
         }
         catch (InvalidOperationException iox)
         {
+            _logger.LogWarning(iox, "Opération invalide lors de l'appel de '{MethodName}'", methodName);
             ConsoleUI.WriteError(string.Format(ClientResources.InvalidOperationError, methodName, iox.Message));
         }
         catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Erreur inattendue lors de l'appel de '{MethodName}'", methodName);
             ConsoleUI.WriteError(string.Format(ClientResources.UnexpectedError, methodName, ex.Message));
         }
     }
@@ -211,14 +223,17 @@ public class LobbyServices
         }
         catch (HubException hex)
         {
+            _logger.LogWarning(hex, "HubException lors de l'appel de '{MethodName}'", methodName);
             ConsoleUI.WriteError(string.Format(ClientResources.HubExceptionError, methodName, hex.Message));
         }
         catch (InvalidOperationException iox)
         {
+            _logger.LogWarning(iox, "Opération invalide lors de l'appel de '{MethodName}'", methodName);
             ConsoleUI.WriteError(string.Format(ClientResources.InvalidOperationError, methodName, iox.Message));
         }
         catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Erreur inattendue lors de l'appel de '{MethodName}'", methodName);
             ConsoleUI.WriteError(string.Format(ClientResources.UnexpectedError, methodName, ex.Message));
         }
 

@@ -251,22 +251,4 @@ public class App
 
         return await waitTask;
     }
-
-    // Non branchée : boucle de chat conservée pour référence, jamais appelée.
-    private async Task InteractionLoop()
-    {
-        while (true)
-        {
-            ConsoleUI.WritePrompt(ClientResources.ExitPrompt);
-            var input = ConsoleUI.ReadPrompt();
-
-            if (string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
-                break;
-
-            if (!string.IsNullOrWhiteSpace(input))
-                await _lobbyServices.SendAsync(Constants.SendMessageToAllPlayersMethod, input);
-        }
-
-        await _lobbyServices.DisconnectAsync();
-    }
 }

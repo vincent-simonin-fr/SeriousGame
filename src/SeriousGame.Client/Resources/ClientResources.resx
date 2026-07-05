@@ -54,9 +54,6 @@ Your choice:</value>
     <data name="InvalidChoiceError" xml:space="preserve">
         <value>Your choice isn't valid.</value>
     </data>
-    <data name="ExitPrompt" xml:space="preserve">
-        <value>Type a message (‘exit’ to quit):</value>
-    </data>
     <data name="WaitingForGameHeader" xml:space="preserve">
         <value>🕹 Waiting for game {0}</value>
     </data>

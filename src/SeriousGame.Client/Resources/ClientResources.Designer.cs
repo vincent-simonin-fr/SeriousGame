@@ -105,12 +105,6 @@ namespace Client.Resources {
             }
         }
 
-        internal static string ExitPrompt {
-            get {
-                return ResourceManager.GetString("ExitPrompt", resourceCulture);
-            }
-        }
-
         internal static string WaitingForGameHeader {
             get {
                 return ResourceManager.GetString("WaitingForGameHeader", resourceCulture);

@@ -1,5 +1,5 @@
 using Server.Application.Services;
-using Shared.Models;
+using Server.Domain;
 
 namespace SeriousGame.UnitTests;
 

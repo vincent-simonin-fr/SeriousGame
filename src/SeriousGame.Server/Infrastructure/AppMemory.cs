@@ -1,4 +1,4 @@
-using Shared.Models;
+using Server.Domain;
 using System.Collections.Concurrent;
 
 namespace Server.Infrastructure;

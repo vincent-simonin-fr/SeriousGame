@@ -1,4 +1,4 @@
-using Shared.Models;
+using Server.Domain;
 
 namespace Server.Application.Services;
 

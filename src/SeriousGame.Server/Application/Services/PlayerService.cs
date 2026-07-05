@@ -1,5 +1,5 @@
 using Server.Application.Abstractions;
-using Shared.Models;
+using Server.Domain;
 
 namespace Server.Application.Services;
 

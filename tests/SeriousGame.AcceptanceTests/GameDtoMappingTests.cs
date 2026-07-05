@@ -1,4 +1,5 @@
-using Shared.Models;
+using Server.Application;
+using Server.Domain;
 using Shared.Models.Dtos;
 
 namespace SeriousGame.AcceptanceTests;

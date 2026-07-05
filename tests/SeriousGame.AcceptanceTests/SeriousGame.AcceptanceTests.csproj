@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SeriousGame.Client\SeriousGame.Client.csproj" />
+    <ProjectReference Include="..\..\src\SeriousGame.Server\SeriousGame.Server.csproj" />
     <ProjectReference Include="..\..\src\SeriousGame.Shared\SeriousGame.Shared.csproj" />
   </ItemGroup>
 

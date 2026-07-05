@@ -1,6 +1,6 @@
-using Shared.Models.Enums;
+using Server.Domain.Enums;
 
-namespace Shared.Models;
+namespace Server.Domain;
 
 public class Skill
 {

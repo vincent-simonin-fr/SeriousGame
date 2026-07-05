@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using Server.Application.Abstractions;
+using Server.Domain;
 using Server.Hubs;
 using Server.Resources;
 using Shared.Abstractions;

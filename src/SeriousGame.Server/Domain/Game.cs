@@ -1,6 +1,6 @@
-using Shared.Models.Base;
+using Server.Domain.Base;
 
-namespace Shared.Models;
+namespace Server.Domain;
 
 public class Game : BaseModel
 {
@@ -11,6 +11,7 @@ public class Game : BaseModel
     public bool IsInProgress { get; set; } = false;
     public required Player Owner { get; set; }
     public ICollection<Player> Players { get; set; } = [];
+    public ICollection<Company> Companies { get; } = [];
 
     public ICollection<Round> Rounds { get; } = [];
 }

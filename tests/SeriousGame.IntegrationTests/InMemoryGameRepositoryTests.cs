@@ -1,5 +1,5 @@
 using Server.Infrastructure;
-using Shared.Models;
+using Server.Domain;
 
 namespace SeriousGame.IntegrationTests;
 

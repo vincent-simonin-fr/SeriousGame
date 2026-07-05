@@ -48,7 +48,7 @@ public class LobbyServices : ILobbyServices
     {
         _lobbyConnection.On<List<GameDto>>(nameof(ILobbyHubClient.GamesUpdated), games =>
         {
-            _session.Games = games;
+            _session.UpdateGames(games);
         });
 
         _lobbyConnection.On<GameDto, List<string>>(nameof(ILobbyHubClient.WaitingForPlayers), (game, playerNames) =>
@@ -69,8 +69,7 @@ public class LobbyServices : ILobbyServices
 
         _lobbyConnection.On<GameDto>(nameof(ILobbyHubClient.UpdateGameInProgressWhenPlayerQuits), game =>
         {
-            if (_session.CurrentGame is null) return;
-            _session.CurrentGame.Players.First(p => !game.Players.Select(player => player.Id).Contains(p.Id)).IsActive = false;
+            _session.MarkPlayerInactiveAfterOtherQuit(game);
         });
 
         _lobbyConnection.Reconnecting += error =>
@@ -102,7 +101,7 @@ public class LobbyServices : ILobbyServices
 
     public async Task IdentifyClientAsync(string nickname)
     {
-        _session.Nickname = nickname;
+        _session.Identify(nickname);
         var command = new CreatePlayerCommand { PlayerId = _session.PlayerId, Nickname = nickname };
         await _lobbyConnection.InvokeAsync(nameof(ILobbyHubServer.IdentifyNewPlayer), command);
     }
@@ -112,9 +111,10 @@ public class LobbyServices : ILobbyServices
         PrepareGameStartSignal();
 
         var command = new CreateGameCommand { PlayerId = _session.PlayerId, GameName = gameName };
-        _session.CurrentGame = await _lobbyConnection.InvokeAsync<GameDto>(nameof(ILobbyHubServer.CreateGame), command);
+        var game = await _lobbyConnection.InvokeAsync<GameDto>(nameof(ILobbyHubServer.CreateGame), command);
+        _session.EnterGame(game);
 
-        return _session.CurrentGame.IsInProgress
+        return game.IsInProgress
             ? EnrollmentResult.GameStarting
             : EnrollmentResult.WaitingForPlayers;
     }
@@ -124,12 +124,14 @@ public class LobbyServices : ILobbyServices
         PrepareGameStartSignal();
 
         var command = new JoinGameCommand { PlayerId = _session.PlayerId, GameId = gameId };
-        _session.CurrentGame = await _lobbyConnection.InvokeAsync<GameDto?>(nameof(ILobbyHubServer.JoinGame), command);
+        var game = await _lobbyConnection.InvokeAsync<GameDto?>(nameof(ILobbyHubServer.JoinGame), command);
 
-        if (_session.CurrentGame is null)
+        if (game is null)
             return EnrollmentResult.Failed;
 
-        return _session.CurrentGame.IsInProgress
+        _session.EnterGame(game);
+
+        return game.IsInProgress
             ? EnrollmentResult.GameStarting
             : EnrollmentResult.WaitingForPlayers;
     }
@@ -161,7 +163,7 @@ public class LobbyServices : ILobbyServices
         if (_session.CurrentGame is null) return;
 
         await _lobbyConnection.InvokeAsync(nameof(ILobbyHubServer.LeaveGame));
-        _session.CurrentGame = null;
+        _session.LeaveCurrentGame();
     }
 
     public async Task SendAsync(string methodName, params object[] args)

@@ -33,17 +33,12 @@ internal class Program
             builder.SetMinimumLevel(LogLevel.Information);
         });
 
-        services.AddScoped<ClientSession>();
-        services.AddScoped<ILobbyServices, LobbyServices>();
-        services.AddScoped<IGameServices, GameServices>();
-        services.AddScoped<App>();
+        services.AddSingleton<ClientSession>();
+        services.AddSingleton<ILobbyServices, LobbyServices>();
+        services.AddSingleton<IGameServices, GameServices>();
+        services.AddSingleton<App>();
 
         using var serviceProvider = services.BuildServiceProvider();
-
-        // Un seul scope explicite pour toute la durée de l'exécution du client -
-        // le Client n'a pas d'équivalent au scope-par-appel-de-hub du Server, donc on le crée nous-mêmes.
-        var scopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
-        using var scope = scopeFactory.CreateScope();
 
         Console.Title = ClientResources.WindowTitle;
         Console.BackgroundColor = ConsoleColor.Black;
@@ -51,10 +46,10 @@ internal class Program
 
         ConsoleUI.WriteHeader(ClientResources.GameName);
 
-        var app = scope.ServiceProvider.GetRequiredService<App>();
+        var app = serviceProvider.GetRequiredService<App>();
         await app.RunAsync();
 
-        var session = scope.ServiceProvider.GetRequiredService<ClientSession>();
+        var session = serviceProvider.GetRequiredService<ClientSession>();
         ConsoleUI.WriteInfo(string.Format(ClientResources.GoodbyeMessage, session.Nickname ?? ClientResources.NotLoggedInLabel));
     }
 }

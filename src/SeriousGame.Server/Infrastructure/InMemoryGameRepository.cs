@@ -12,7 +12,7 @@ public class InMemoryGameRepository : IGameRepository
         _appMemory = appMemory;
     }
 
-    public IEnumerable<Game> GetAll() => _appMemory.Games;
-    public void Add(Game game) => _appMemory.Games.Add(game);
-    public void Remove(Game game) => _appMemory.Games.Remove(game);
+    public IEnumerable<Game> GetAll() => _appMemory.Games.Values;
+    public void Add(Game game) => _appMemory.Games[game.Id] = game;
+    public void Remove(Game game) => _appMemory.Games.TryRemove(game.Id, out _);
 }

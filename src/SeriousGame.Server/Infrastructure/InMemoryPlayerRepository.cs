@@ -12,7 +12,7 @@ public class InMemoryPlayerRepository : IPlayerRepository
         _appMemory = appMemory;
     }
 
-    public IEnumerable<Player> GetAll() => _appMemory.Players;
-    public void Add(Player player) => _appMemory.Players.Add(player);
-    public void Remove(Player player) => _appMemory.Players.Remove(player);
+    public IEnumerable<Player> GetAll() => _appMemory.Players.Values;
+    public void Add(Player player) => _appMemory.Players[player.Id] = player;
+    public void Remove(Player player) => _appMemory.Players.TryRemove(player.Id, out _);
 }

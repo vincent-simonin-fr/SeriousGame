@@ -10,6 +10,6 @@
 - `Infrastructure/` : `AppMemory` (l'état singleton réellement stocké en mémoire) plus `InMemoryGameRepository`/`InMemoryPlayerRepository` (pattern Repository — de simples enveloppes implémentant les interfaces de la couche Application par-dessus les collections d'`AppMemory`). Pas de persistance réelle (BDD/fichiers) — toujours en mémoire, juste derrière une abstraction.
 - `Hubs/` : `LobbyHub` est un **adaptateur fin** — il parse chaque appel SignalR et délègue à `ILobbyFlowService` ; il ne touche jamais `AppMemory`/`GameService`/`PlayerService` directement, et ne contient aucune règle métier. `GameHub` (`/game`) n'a pas été touché, hors périmètre de ce passage de layering — il duplique encore la logique de join avec de simples appels `SendAsync("EventName", ...)` au lieu du pattern `Hub<TClient>` typé utilisé par le lobby.
 
-Config : `appsettings.json` / `appsettings.Development.json`.
+Config : `appsettings.json` / `appsettings.Development.json`. Les paramètres de partie (`MinimumPlayers`, `MaximumPlayers`, `RoundsNumber`) vivent sous la section `Game`, liés à `Server.Options.GameOptions` via le pattern `IOptions<T>` et posés sur chaque `Game` par `GameFactory` — aucune valeur codée en dur dans le domaine.
 
 Voir [limitations connues](known-gaps.md) pour ce qui est volontairement laissé inachevé.

@@ -5,9 +5,9 @@ namespace Server.Domain;
 public class Game : BaseModel
 {
     public required string Name { get; init; }
-    public int MinimumPlayers { get; set; } = 3;
-    public int MaximumPlayers { get; set; } = 8;
-    public int RoundsNumber { get; set; } = 15;
+    public int MinimumPlayers { get; set; }
+    public int MaximumPlayers { get; set; }
+    public int RoundsNumber { get; set; }
     public bool IsInProgress { get; set; } = false;
     public required Player Owner { get; set; }
     public ICollection<Player> Players { get; set; } = [];

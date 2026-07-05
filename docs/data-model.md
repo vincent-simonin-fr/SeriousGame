@@ -18,7 +18,7 @@ Le modèle couvre deux moments distincts, ce qui explique certaines cohabitation
 ### Identité et lobby
 
 - **`Player`** — identité de connexion, **persistante** au-delà d'une partie : `Id`, `Nickname`, `ConnectionId`, `IsActive`. Ne référence pas sa `Company` (voir [décisions](#décisions-de-conception)).
-- **`Game`** — la partie : paramètres (`MinimumPlayers`, `MaximumPlayers`, `RoundsNumber`), `IsInProgress`, `Owner`, la collection lobby `Players`, la collection de jeu `Companies`, et l'historique des `Rounds`.
+- **`Game`** — la partie : paramètres (`MinimumPlayers`, `MaximumPlayers`, `RoundsNumber` — posés par `GameFactory` depuis la config `Game`/`GameOptions`, pas de défaut codé dans l'entité), `IsInProgress`, `Owner`, la collection lobby `Players`, la collection de jeu `Companies`, et l'historique des `Rounds`.
 
 ### Entreprise
 

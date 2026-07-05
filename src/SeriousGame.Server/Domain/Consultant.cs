@@ -11,4 +11,10 @@ public class Consultant : BaseModel
     public ICollection<Skill> Skills { get; } = [];
 
     public string FullName => $"{Firstname} {Lastname}";
+
+    public void SetSalaryRequirement(int amount)
+    {
+        if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount), "La prétention salariale ne peut pas être négative.");
+        SalaryRequirement = amount;
+    }
 }

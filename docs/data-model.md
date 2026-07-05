@@ -22,9 +22,9 @@ Le modèle couvre deux moments distincts, ce qui explique certaines cohabitation
 
 ### Entreprise
 
-- **`Company`** — entité de jeu scoped à une partie : `Name`, `PlayerOwner` (le joueur qui la pilote), `Treasury`, son `Staff` de consultants, et son état persistant entre tours : `Contracts` (appels d'offres en exécution) et `TrainingEnrollments` (consultants en formation).
-- **`Consultant`** — membre du staff : `Firstname`/`Lastname`, `SalaryRequirement`, `Company`, et ses `Skills`. Un consultant est **« occupé »** s'il figure dans un `Contract` actif ou un `TrainingEnrollment` en cours — état **dérivé**, non stocké.
-- **`Skill`** — compétence : `Id`, `Name`, `Level`. Utilisée à la fois comme compétence *possédée* (par un consultant) et *exigée* (par un tender) — distinction encore à trancher (voir [points ouverts](#points-encore-ouverts)).
+- **`Company`** — entité de jeu scoped à une partie : `Name`, `PlayerOwner` (le joueur qui la pilote), `Treasury` (évolue via `Deposit`/`Withdraw`, pas de setter public), son `Staff` de consultants, et son état persistant entre tours : `Contracts` (appels d'offres en exécution) et `TrainingEnrollments` (consultants en formation).
+- **`Consultant`** — membre du staff : `Firstname`/`Lastname`, `SalaryRequirement` (fixée/renégociée via `SetSalaryRequirement`), `Company`, et ses `Skills`. Un consultant est **« occupé »** s'il figure dans un `Contract` actif ou un `TrainingEnrollment` en cours — état **dérivé**, non stocké.
+- **`Skill`** — compétence : `Id`, `Name`, `Level` (progresse d'un cran via `LevelUp`, typiquement à la fin d'une formation). Utilisée à la fois comme compétence *possédée* (par un consultant) et *exigée* (par un tender) — distinction encore à trancher (voir [points ouverts](#points-encore-ouverts)).
 
 ### Catalogue d'un tour
 
@@ -119,4 +119,3 @@ Suivis dans [`openspec/cadrage.md`](../openspec/cadrage.md), à trancher avant/p
 
 - **Critère d'attribution** d'un tender (moins-disant / meilleure couverture / premier arrivé). Un choix « moins-disant » ajouterait un champ prix (`Bid`) sur `TenderApplication` ; les autres critères ne changent rien au modèle.
 - **`Skill` possédé vs exigé** : la même classe sert de compétence détenue par un consultant et de compétence requise par un tender, avec un `Level` mutable — à scinder (définition de référentiel vs niveau possédé/requis).
-- **Champs `private set` non initialisables** (`Consultant.SalaryRequirement`, `Skill.Level`) : à rendre affectables (via `init` ou méthodes) pour que le générateur puisse les remplir.

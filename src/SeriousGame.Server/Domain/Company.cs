@@ -14,5 +14,15 @@ public class Company : BaseModel
     public ICollection<Contract> Contracts { get; } = [];
     public ICollection<TrainingEnrollment> TrainingEnrollments { get; } = [];
 
-    // TODO : Ajouter des méthodes pour augmenter/diminuer la trésorerie et impliquer le staff
+    public void Deposit(int amount)
+    {
+        if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount), "Le montant déposé ne peut pas être négatif.");
+        Treasury += amount;
+    }
+
+    public void Withdraw(int amount)
+    {
+        if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount), "Le montant retiré ne peut pas être négatif.");
+        Treasury -= amount;
+    }
 }

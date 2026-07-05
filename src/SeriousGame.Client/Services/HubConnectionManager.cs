@@ -1,4 +1,3 @@
-using Client.State;
 using Client.UI;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR;
@@ -9,13 +8,15 @@ namespace Client.Services;
 public class HubConnectionManager
 {
     private readonly string _baseHubUrl;
+    private readonly string _clientId;
     private readonly HubConnection _lobbyHubConnection;
     private readonly HubConnection _gameHubConnection;
     private readonly HubConnection _chatHubConnection;
 
-    public HubConnectionManager(string baseHubUrl)
+    public HubConnectionManager(string baseHubUrl, string clientId)
     {
         _baseHubUrl = baseHubUrl;
+        _clientId = clientId;
 
         _lobbyHubConnection = new HubConnectionBuilder()
             .WithUrl($"{_baseHubUrl}/lobby", options =>
@@ -61,7 +62,7 @@ public class HubConnectionManager
         _lobbyHubConnection.Reconnected += async id =>
         {
             // Mettre à jour le ConnectionId
-            await _lobbyHubConnection.InvokeAsync("UpdatePlayerConnectionId", ClientIdentity.Id);
+            await _lobbyHubConnection.InvokeAsync("UpdatePlayerConnectionId", _clientId);
             ConsoleUI.WriteInfo("🔗 Reconnected !");
             await Task.CompletedTask;
         };

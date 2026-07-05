@@ -64,8 +64,7 @@ Your choice:</value>
         <value>Players ({0}/{1}) : {2}</value>
     </data>
     <data name="GameStartingMessage" xml:space="preserve">
-        <value>
-🚀 The Game {0} starts!</value>
+        <value>🚀 The Game {0} starts!</value>
     </data>
     <data name="ServerMessagePrefix" xml:space="preserve">
         <value>[From the Server] {0}</value>

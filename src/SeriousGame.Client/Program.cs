@@ -33,6 +33,7 @@ internal class Program
             builder.SetMinimumLevel(LogLevel.Information);
         });
 
+        services.AddScoped<ClientSession>();
         services.AddScoped<ILobbyServices, LobbyServices>();
         services.AddScoped<IGameServices, GameServices>();
         services.AddScoped<App>();
@@ -53,6 +54,7 @@ internal class Program
         var app = scope.ServiceProvider.GetRequiredService<App>();
         await app.RunAsync();
 
-        ConsoleUI.WriteInfo(string.Format(ClientResources.GoodbyeMessage, ClientIdentity.Nickname));
+        var session = scope.ServiceProvider.GetRequiredService<ClientSession>();
+        ConsoleUI.WriteInfo(string.Format(ClientResources.GoodbyeMessage, session.Nickname ?? ClientResources.NotLoggedInLabel));
     }
 }

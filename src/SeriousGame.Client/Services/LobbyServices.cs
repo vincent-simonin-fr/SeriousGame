@@ -1,8 +1,6 @@
 using Client.Options;
-using Client.Resources;
 using Client.Services.Interfaces;
 using Client.State;
-using Client.UI;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
@@ -13,29 +11,35 @@ using Shared.Models.Dtos;
 
 namespace Client.Services;
 
+/// <summary>
+/// Transport hub du lobby : appels sortants, réception des broadcasts (relayés en événements)
+/// et mise à jour de la session. Aucune E/S console ici - la présentation appartient à App.
+/// </summary>
 public class LobbyServices : ILobbyServices
 {
-    private readonly string _hubUrl;
     private readonly ILogger<LobbyServices> _logger;
-    private HubConnection _lobbyConnection;
+    private readonly ClientSession _session;
+    private readonly HubConnection _lobbyConnection;
     private TaskCompletionSource? _gameStartingSignal;
-    private readonly ConsoleAnimator _waitingAnim;
-    public static string[] Dots => [".", "..", "...", "....", "....."];
-    private static string[] Bounce => ["⬤     ", " ⬤    ", "  ⬤   ", "   ⬤  ", "    ⬤ ", "     ⬤", "    ⬤ ", "   ⬤  ", "  ⬤   ", " ⬤    "];
 
-    public LobbyServices(IOptions<WebSocketServerOptions> webSocketServerOptions, ILogger<LobbyServices> logger)
+    public event Action<GameDto, IReadOnlyList<string>>? WaitingForPlayers;
+    public event Action<GameDto>? GameStarting;
+    public event Action<string>? NotificationReceived;
+    public event Action? ConnectionLost;
+    public event Action? ConnectionRestored;
+
+    public string HubUrl { get; }
+
+    public LobbyServices(IOptions<WebSocketServerOptions> webSocketServerOptions, ILogger<LobbyServices> logger, ClientSession session)
     {
         _logger = logger;
+        _session = session;
         var options = webSocketServerOptions.Value;
-        _hubUrl = $"{options.Scheme}://{options.Domain}:{options.Port}{HubRoutes.Lobby}";
+        HubUrl = $"{options.Scheme}://{options.Domain}:{options.Port}{HubRoutes.Lobby}";
         _lobbyConnection = new HubConnectionBuilder()
-            .WithUrl(_hubUrl)
+            .WithUrl(HubUrl)
             .WithAutomaticReconnect()
             .Build();
-
-        // Champ (et non variable locale de RegisterHandlers) : le chemin d'annulation (Échap)
-        // doit pouvoir stopper l'animation, pas seulement le handler GameStarting.
-        _waitingAnim = new ConsoleAnimator(ClientResources.WaitingAnimationLabel, Bounce, 200);
 
         RegisterHandlers();
     }
@@ -44,45 +48,41 @@ public class LobbyServices : ILobbyServices
     {
         _lobbyConnection.On<List<GameDto>>(nameof(ILobbyHubClient.GamesUpdated), games =>
         {
-            ClientMemory.Games = games;
+            _session.Games = games;
         });
 
         _lobbyConnection.On<GameDto, List<string>>(nameof(ILobbyHubClient.WaitingForPlayers), (game, playerNames) =>
         {
-            ConsoleUI.WriteHeader(string.Format(ClientResources.WaitingForGameHeader, game.Name));
-            ConsoleUI.WritePrompt(string.Format(ClientResources.PlayersWaitingPrompt, playerNames.Count, game.MinimumPlayers, string.Join(", ", playerNames)));
-            _waitingAnim.Start();
+            WaitingForPlayers?.Invoke(game, playerNames);
         });
 
         _lobbyConnection.On<GameDto>(nameof(ILobbyHubClient.GameStarting), game =>
         {
-            _waitingAnim.Stop();
-            ConsoleUI.WriteInfo(string.Format(ClientResources.GameStartingMessage, game.Name));
+            GameStarting?.Invoke(game);
             _gameStartingSignal?.TrySetResult();
         });
 
         _lobbyConnection.On<string>(nameof(ILobbyHubClient.Notify), msg =>
         {
-            ConsoleUI.WriteInfo(string.Format(ClientResources.ServerMessagePrefix, msg));
+            NotificationReceived?.Invoke(msg);
         });
 
         _lobbyConnection.On<GameDto>(nameof(ILobbyHubClient.UpdateGameInProgressWhenPlayerQuits), game =>
         {
-            if (ClientMemory.CurrentGame is null) return;
-            ClientMemory.CurrentGame.Players.First(p => !game.Players.Select(player => player.Id).Contains(p.Id)).IsActive = false;
+            if (_session.CurrentGame is null) return;
+            _session.CurrentGame.Players.First(p => !game.Players.Select(player => player.Id).Contains(p.Id)).IsActive = false;
         });
 
         _lobbyConnection.Reconnecting += error =>
         {
-            ConsoleUI.WriteError(ClientResources.ReconnectingWarning);
+            ConnectionLost?.Invoke();
             return Task.CompletedTask;
         };
 
         _lobbyConnection.Reconnected += async id =>
         {
-            await _lobbyConnection.InvokeAsync(nameof(ILobbyHubServer.UpdatePlayerConnectionId), ClientIdentity.Id);
-            ConsoleUI.WriteInfo(ClientResources.ReconnectedMessage);
-            await Task.CompletedTask;
+            await _lobbyConnection.InvokeAsync(nameof(ILobbyHubServer.UpdatePlayerConnectionId), _session.PlayerId);
+            ConnectionRestored?.Invoke();
         };
     }
 
@@ -91,87 +91,45 @@ public class LobbyServices : ILobbyServices
         try
         {
             await _lobbyConnection.StartAsync();
-            ConsoleUI.WriteInfo(string.Format(ClientResources.ConnectedToHubMessage, _hubUrl));
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Échec de connexion au hub {HubUrl}", _hubUrl);
-            ConsoleUI.WriteError(string.Format(ClientResources.FailedToConnectError, _hubUrl));
+            _logger.LogWarning(ex, "Échec de connexion au hub {HubUrl}", HubUrl);
             return false;
         }
     }
 
     public async Task IdentifyClientAsync(string nickname)
     {
-        ClientIdentity.SetNickname(nickname);
-        var command = new CreatePlayerCommand {  PlayerId = ClientIdentity.Id, Nickname = ClientIdentity.Nickname };
+        _session.Nickname = nickname;
+        var command = new CreatePlayerCommand { PlayerId = _session.PlayerId, Nickname = nickname };
         await _lobbyConnection.InvokeAsync(nameof(ILobbyHubServer.IdentifyNewPlayer), command);
     }
 
-    public async Task<EnrollmentResult> CreateGameAsync()
+    public async Task<EnrollmentResult> CreateGameAsync(string gameName)
     {
-        ConsoleUI.WritePrompt(ClientResources.ChooseGameNamePrompt);
-        var gameName = ConsoleUI.ReadPrompt() ?? $"Game_{Guid.NewGuid().ToString()[..6]}";
-
         PrepareGameStartSignal();
 
-        var command = new CreateGameCommand { PlayerId = ClientIdentity.Id, GameName = gameName };
-        ClientMemory.CurrentGame = await _lobbyConnection.InvokeAsync<GameDto>(nameof(ILobbyHubServer.CreateGame), command);
+        var command = new CreateGameCommand { PlayerId = _session.PlayerId, GameName = gameName };
+        _session.CurrentGame = await _lobbyConnection.InvokeAsync<GameDto>(nameof(ILobbyHubServer.CreateGame), command);
 
-        ConsoleUI.WriteInfo(string.Format(ClientResources.GameCreatedMessage, gameName));
-
-        return ClientMemory.CurrentGame.IsInProgress
+        return _session.CurrentGame.IsInProgress
             ? EnrollmentResult.GameStarting
             : EnrollmentResult.WaitingForPlayers;
     }
 
-    public async Task<EnrollmentResult> JoinGameAsync()
+    public async Task<EnrollmentResult> JoinGameAsync(string gameId)
     {
-        // Snapshot local : GamesUpdated peut remplacer la liste pendant la saisie.
-        var games = ClientMemory.Games;
-
-        if (games.Count == 0)
-        {
-            ConsoleUI.WriteInfo(ClientResources.NoGamesAvailableMessage);
-            return EnrollmentResult.NoGamesAvailable;
-        }
-
-        ConsoleUI.WriteInfo(ClientResources.GamesAvailableHeader);
-        for (int i = 0; i < games.Count; i++)
-            ConsoleUI.WritePrompt(string.Format(ClientResources.GameListItemFormat, i + 1, games[i].Name, games[i].Players.Count, games[i].MinimumPlayers));
-
-        var returnToMenuChoice = games.Count + 1;
-        ConsoleUI.WritePrompt(string.Format(ClientResources.ReturnToMainMenuFormat, returnToMenuChoice));
-
-        int choice;
-        while (true)
-        {
-            ConsoleUI.WritePrompt(ClientResources.EnterGameNumberPrompt);
-            if (int.TryParse(Console.ReadLine(), out choice) && choice > 0 && choice <= returnToMenuChoice)
-                break;
-            ConsoleUI.WriteError(ClientResources.InvalidChoiceMessage);
-        }
-
-        if (choice == returnToMenuChoice)
-            return EnrollmentResult.ReturnToMenu;
-
-        var selectedGame = games[choice - 1];
-
         PrepareGameStartSignal();
 
-        var command = new JoinGameCommand { PlayerId = ClientIdentity.Id, GameId = selectedGame.Id };
-        ClientMemory.CurrentGame = await _lobbyConnection.InvokeAsync<GameDto?>(nameof(ILobbyHubServer.JoinGame), command);
+        var command = new JoinGameCommand { PlayerId = _session.PlayerId, GameId = gameId };
+        _session.CurrentGame = await _lobbyConnection.InvokeAsync<GameDto?>(nameof(ILobbyHubServer.JoinGame), command);
 
-        if (ClientMemory.CurrentGame is null)
-        {
-            ConsoleUI.WriteError(string.Format(ClientResources.CannotJoinGameError, selectedGame.Name));
+        if (_session.CurrentGame is null)
             return EnrollmentResult.Failed;
-        }
 
-        ConsoleUI.WriteInfo(string.Format(ClientResources.JoinedGameMessage, selectedGame.Name));
-
-        return ClientMemory.CurrentGame.IsInProgress
+        return _session.CurrentGame.IsInProgress
             ? EnrollmentResult.GameStarting
             : EnrollmentResult.WaitingForPlayers;
     }
@@ -183,61 +141,34 @@ public class LobbyServices : ILobbyServices
         _gameStartingSignal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
-    public async Task<bool> WaitForGameStartAsync()
+    public async Task<bool> WaitForGameStartAsync(CancellationToken cancellationToken)
     {
         if (_gameStartingSignal is null) return true;
 
-        // KeyAvailable lève une exception quand stdin est redirigé (exécution scriptée) :
-        // dans ce cas la détection clavier est désactivée et on attend uniquement le signal.
-        var canReadKeys = !Console.IsInputRedirected;
-        if (canReadKeys) ConsoleUI.WritePrompt(ClientResources.CancelWaitingHint);
-
-        while (!_gameStartingSignal.Task.IsCompleted)
+        try
         {
-            if (canReadKeys && Console.KeyAvailable)
-            {
-                // intercept: true - la touche n'est pas affichée dans la console.
-                var key = Console.ReadKey(intercept: true);
-                if (key.Key == ConsoleKey.Escape)
-                {
-                    _waitingAnim.Stop();
-                    return false;
-                }
-                // Toute autre touche est consommée et ignorée (n'encombre pas la saisie du menu).
-            }
-
-            // Sondage léger : 10 vérifications/s, le thread dort entre deux.
-            await Task.Delay(100);
+            await _gameStartingSignal.Task.WaitAsync(cancellationToken);
+            return true;
         }
-
-        // Le signal gagne sur Échap si les deux surviennent dans la même fenêtre.
-        return true;
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
     }
 
     public async Task LeaveGameAsync()
     {
-        if (ClientMemory.CurrentGame is null) return;
+        if (_session.CurrentGame is null) return;
 
-        var gameName = ClientMemory.CurrentGame.Name;
         await _lobbyConnection.InvokeAsync(nameof(ILobbyHubServer.LeaveGame));
-        ClientMemory.CurrentGame = null;
-
-        ConsoleUI.WriteInfo(string.Format(ClientResources.LeftGameMessageFormat, gameName));
-    }
-
-    private async Task CreatePlayerCompanyAsync()
-    {
-        ConsoleUI.WriteHeader(ClientResources.CreateCompanyHeader);
-        ConsoleUI.WritePrompt(ClientResources.CompanyNamePrompt);
-        var companyName = ConsoleUI.ReadPrompt();
-
+        _session.CurrentGame = null;
     }
 
     public async Task SendAsync(string methodName, params object[] args)
     {
         if (_lobbyConnection.State != HubConnectionState.Connected)
         {
-            ConsoleUI.WriteError(string.Format(ClientResources.CannotInvokeError, methodName, _lobbyConnection.State));
+            _logger.LogWarning("Appel de '{MethodName}' impossible : état de connexion {State}", methodName, _lobbyConnection.State);
             return;
         }
 
@@ -248,17 +179,14 @@ public class LobbyServices : ILobbyServices
         catch (HubException hex)
         {
             _logger.LogWarning(hex, "HubException lors de l'appel de '{MethodName}'", methodName);
-            ConsoleUI.WriteError(string.Format(ClientResources.HubExceptionError, methodName, hex.Message));
         }
         catch (InvalidOperationException iox)
         {
             _logger.LogWarning(iox, "Opération invalide lors de l'appel de '{MethodName}'", methodName);
-            ConsoleUI.WriteError(string.Format(ClientResources.InvalidOperationError, methodName, iox.Message));
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Erreur inattendue lors de l'appel de '{MethodName}'", methodName);
-            ConsoleUI.WriteError(string.Format(ClientResources.UnexpectedError, methodName, ex.Message));
         }
     }
 
@@ -266,7 +194,7 @@ public class LobbyServices : ILobbyServices
     {
         if (_lobbyConnection.State != HubConnectionState.Connected)
         {
-            ConsoleUI.WriteError(string.Format(ClientResources.CannotInvokeError, methodName, _lobbyConnection.State));
+            _logger.LogWarning("Appel de '{MethodName}' impossible : état de connexion {State}", methodName, _lobbyConnection.State);
             return default;
         }
 
@@ -277,24 +205,21 @@ public class LobbyServices : ILobbyServices
         catch (HubException hex)
         {
             _logger.LogWarning(hex, "HubException lors de l'appel de '{MethodName}'", methodName);
-            ConsoleUI.WriteError(string.Format(ClientResources.HubExceptionError, methodName, hex.Message));
         }
         catch (InvalidOperationException iox)
         {
             _logger.LogWarning(iox, "Opération invalide lors de l'appel de '{MethodName}'", methodName);
-            ConsoleUI.WriteError(string.Format(ClientResources.InvalidOperationError, methodName, iox.Message));
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Erreur inattendue lors de l'appel de '{MethodName}'", methodName);
-            ConsoleUI.WriteError(string.Format(ClientResources.UnexpectedError, methodName, ex.Message));
         }
 
         return default;
     }
+
     public async Task DisconnectAsync()
     {
         await _lobbyConnection.StopAsync();
-        ConsoleUI.WriteInfo(ClientResources.DisconnectedFromLobbyMessage);
     }
 }

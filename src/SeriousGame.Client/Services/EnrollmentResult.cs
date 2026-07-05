@@ -12,11 +12,5 @@ public enum EnrollmentResult
     WaitingForPlayers,
 
     /// <summary>Le serveur a refusé le join (partie pleine ou déjà démarrée).</summary>
-    Failed,
-
-    /// <summary>Aucune partie disponible à rejoindre.</summary>
-    NoGamesAvailable,
-
-    /// <summary>Le joueur a choisi de revenir au menu principal.</summary>
-    ReturnToMenu
+    Failed
 }

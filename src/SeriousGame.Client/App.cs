@@ -7,24 +7,76 @@ using Microsoft.Extensions.Logging;
 
 namespace Client;
 
+/// <summary>
+/// Pilote la navigation et possède toute l'E/S console : prompts, rendu des écrans,
+/// détection clavier. Le transport hub et l'état vivent dans ILobbyServices/ClientSession.
+/// </summary>
 public class App
 {
+    private static string[] Bounce => ["⬤     ", " ⬤    ", "  ⬤   ", "   ⬤  ", "    ⬤ ", "     ⬤", "    ⬤ ", "   ⬤  ", "  ⬤   ", " ⬤    "];
+
     private readonly ILogger<App> _logger;
     private readonly ILobbyServices _lobbyServices;
+    private readonly ClientSession _session;
+    private readonly ConsoleAnimator _waitingAnim;
 
-    public App(ILogger<App> logger, ILobbyServices lobbyServices)
+    // Garde d'affichage : les broadcasts WaitingForPlayers ne doivent rafraîchir l'écran
+    // que pendant la phase d'attente, pas écraser le menu pendant la navigation.
+    private bool _isWaitingForGameStart;
+
+    public App(ILogger<App> logger, ILobbyServices lobbyServices, ClientSession session)
     {
         _logger = logger;
         _lobbyServices = lobbyServices;
+        _session = session;
+        _waitingAnim = new ConsoleAnimator(ClientResources.WaitingAnimationLabel, Bounce, 200);
+
+        SubscribeToLobbyEvents();
+    }
+
+    private void SubscribeToLobbyEvents()
+    {
+        _lobbyServices.WaitingForPlayers += (game, playerNames) =>
+        {
+            if (!_isWaitingForGameStart) return;
+            RenderWaitingRoom(game.Name, playerNames, game.MinimumPlayers);
+        };
+
+        _lobbyServices.GameStarting += game =>
+        {
+            _waitingAnim.Stop();
+            ConsoleUI.WriteInfo(string.Format(ClientResources.GameStartingMessage, game.Name));
+        };
+
+        _lobbyServices.NotificationReceived += msg =>
+        {
+            ConsoleUI.WriteInfo(string.Format(ClientResources.ServerMessagePrefix, msg));
+        };
+
+        _lobbyServices.ConnectionLost += () =>
+        {
+            ConsoleUI.WriteError(ClientResources.ReconnectingWarning);
+        };
+
+        _lobbyServices.ConnectionRestored += () =>
+        {
+            ConsoleUI.WriteInfo(ClientResources.ReconnectedMessage);
+        };
     }
 
     public async Task RunAsync()
     {
-        _logger.LogDebug("Your client ID: {clientId}", ClientIdentity.Id);
+        _logger.LogDebug("Your client ID: {clientId}", _session.PlayerId);
 
         var isSuccessfullyConnected = await _lobbyServices.ConnectAsync();
 
-        if (!isSuccessfullyConnected) return;
+        if (!isSuccessfullyConnected)
+        {
+            ConsoleUI.WriteError(string.Format(ClientResources.FailedToConnectError, _lobbyServices.HubUrl));
+            return;
+        }
+
+        ConsoleUI.WriteInfo(string.Format(ClientResources.ConnectedToHubMessage, _lobbyServices.HubUrl));
 
         ConsoleUI.WritePrompt(ClientResources.ChooseLoginPrompt);
         var login = ConsoleUI.ReadPrompt() ?? $"Player_{Guid.NewGuid().ToString()[..6]}";
@@ -54,13 +106,14 @@ public class App
             switch (input)
             {
                 case "1":
-                    await HandleEnrollmentAsync(await _lobbyServices.CreateGameAsync());
+                    await CreateGameFlowAsync();
                     break;
                 case "2":
-                    await HandleEnrollmentAsync(await _lobbyServices.JoinGameAsync());
+                    await JoinGameFlowAsync();
                     break;
                 case "3":
                     await _lobbyServices.DisconnectAsync();
+                    ConsoleUI.WriteInfo(ClientResources.DisconnectedFromLobbyMessage);
                     return;
                 default:
                     ConsoleUI.WriteError(ClientResources.InvalidChoiceError);
@@ -69,24 +122,134 @@ public class App
         }
     }
 
+    private async Task CreateGameFlowAsync()
+    {
+        ConsoleUI.WritePrompt(ClientResources.ChooseGameNamePrompt);
+        var gameName = ConsoleUI.ReadPrompt() ?? $"Game_{Guid.NewGuid().ToString()[..6]}";
+
+        var result = await _lobbyServices.CreateGameAsync(gameName);
+        ConsoleUI.WriteInfo(string.Format(ClientResources.GameCreatedMessage, gameName));
+
+        await HandleEnrollmentAsync(result);
+    }
+
+    private async Task JoinGameFlowAsync()
+    {
+        // Snapshot local : la session peut recevoir une liste rafraîchie pendant la saisie.
+        var games = _session.Games;
+
+        if (games.Count == 0)
+        {
+            ConsoleUI.WriteInfo(ClientResources.NoGamesAvailableMessage);
+            return;
+        }
+
+        ConsoleUI.WriteInfo(ClientResources.GamesAvailableHeader);
+        for (int i = 0; i < games.Count; i++)
+            ConsoleUI.WritePrompt(string.Format(ClientResources.GameListItemFormat, i + 1, games[i].Name, games[i].Players.Count, games[i].MinimumPlayers));
+
+        var returnToMenuChoice = games.Count + 1;
+        ConsoleUI.WritePrompt(string.Format(ClientResources.ReturnToMainMenuFormat, returnToMenuChoice));
+
+        int choice;
+        while (true)
+        {
+            ConsoleUI.WritePrompt(ClientResources.EnterGameNumberPrompt);
+            if (int.TryParse(Console.ReadLine(), out choice) && choice > 0 && choice <= returnToMenuChoice)
+                break;
+            ConsoleUI.WriteError(ClientResources.InvalidChoiceMessage);
+        }
+
+        if (choice == returnToMenuChoice)
+            return;
+
+        var selectedGame = games[choice - 1];
+        var result = await _lobbyServices.JoinGameAsync(selectedGame.Id);
+
+        if (result == EnrollmentResult.Failed)
+        {
+            ConsoleUI.WriteError(string.Format(ClientResources.CannotJoinGameError, selectedGame.Name));
+            return;
+        }
+
+        ConsoleUI.WriteInfo(string.Format(ClientResources.JoinedGameMessage, selectedGame.Name));
+
+        await HandleEnrollmentAsync(result);
+    }
+
     private async Task HandleEnrollmentAsync(EnrollmentResult result)
     {
         switch (result)
         {
             case EnrollmentResult.WaitingForPlayers:
-                var started = await _lobbyServices.WaitForGameStartAsync();
+                _isWaitingForGameStart = true;
+                RenderCurrentWaitingRoom();
+
+                var started = await WaitForGameStartWithEscapeAsync();
+
+                _isWaitingForGameStart = false;
+
                 if (!started)
                 {
                     // Le joueur a annulé l'attente (Échap) : quitter proprement la partie côté serveur.
+                    _waitingAnim.Stop();
+                    var gameName = _session.CurrentGame?.Name;
                     await _lobbyServices.LeaveGameAsync();
+                    ConsoleUI.WriteInfo(string.Format(ClientResources.LeftGameMessageFormat, gameName));
                 }
                 // Démarrée ou annulée : retour au menu (la boucle de partie n'existe pas encore).
                 break;
             case EnrollmentResult.GameStarting:
                 // Point d'entrée de la future boucle de partie.
                 break;
-            // Failed / NoGamesAvailable / ReturnToMenu : retour direct au menu.
         }
+    }
+
+    /// <summary>
+    /// Rend l'écran d'attente depuis l'état de session - utilisé en entrant dans la phase
+    /// d'attente, car le broadcast WaitingForPlayers du join peut être arrivé avant la garde.
+    /// </summary>
+    private void RenderCurrentWaitingRoom()
+    {
+        var game = _session.CurrentGame;
+        if (game is null) return;
+
+        RenderWaitingRoom(game.Name, game.Players.Select(p => p.Nickname).ToList(), game.MinimumPlayers);
+    }
+
+    private void RenderWaitingRoom(string gameName, IReadOnlyList<string> playerNames, int minimumPlayers)
+    {
+        ConsoleUI.WriteHeader(string.Format(ClientResources.WaitingForGameHeader, gameName));
+        ConsoleUI.WritePrompt(string.Format(ClientResources.PlayersWaitingPrompt, playerNames.Count, minimumPlayers, string.Join(", ", playerNames)));
+        _waitingAnim.Start();
+    }
+
+    private async Task<bool> WaitForGameStartWithEscapeAsync()
+    {
+        // KeyAvailable lève une exception quand stdin est redirigé (exécution scriptée) :
+        // dans ce cas la détection clavier est désactivée et on attend uniquement le signal.
+        var canReadKeys = !Console.IsInputRedirected;
+        if (canReadKeys) ConsoleUI.WritePrompt(ClientResources.CancelWaitingHint);
+
+        using var cancellation = new CancellationTokenSource();
+        var waitTask = _lobbyServices.WaitForGameStartAsync(cancellation.Token);
+
+        while (!waitTask.IsCompleted)
+        {
+            if (canReadKeys && Console.KeyAvailable)
+            {
+                // intercept: true - la touche n'est pas affichée dans la console.
+                var key = Console.ReadKey(intercept: true);
+                if (key.Key == ConsoleKey.Escape)
+                    cancellation.Cancel();
+                // Toute autre touche est consommée et ignorée (n'encombre pas la saisie du menu).
+            }
+
+            // Sondage léger : 10 vérifications/s, le thread dort entre deux.
+            await Task.Delay(100);
+        }
+
+        return await waitTask;
     }
 
     // Non branchée : boucle de chat conservée pour référence, jamais appelée.

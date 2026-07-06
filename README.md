@@ -1,4 +1,4 @@
-# SeriousGame
+# Why So Serious
 
 Serious game multijoueur construit comme exercice pédagogique de Clean Architecture, SOLID, et quelques design patterns. Chaque joueur dirige son entreprise dans la tech et doit remporter des appels d'offres pour la développer ; celui qui a le plus grand chiffre d'affaires à la fin de la partie gagne. Le tout tourne sur un serveur ASP.NET Core SignalR plus un client console/TUI, partageant DTOs/contrats via un projet commun.
 

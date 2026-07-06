@@ -278,5 +278,59 @@ namespace Client.Resources {
                 return ResourceManager.GetString("LeftGameMessageFormat", resourceCulture);
             }
         }
+
+        internal static string RoundHeaderFormat {
+            get {
+                return ResourceManager.GetString("RoundHeaderFormat", resourceCulture);
+            }
+        }
+
+        internal static string MarketAnalysisPlaceholder {
+            get {
+                return ResourceManager.GetString("MarketAnalysisPlaceholder", resourceCulture);
+            }
+        }
+
+        internal static string SimulationPlaceholder {
+            get {
+                return ResourceManager.GetString("SimulationPlaceholder", resourceCulture);
+            }
+        }
+
+        internal static string DecisionPlaceholder {
+            get {
+                return ResourceManager.GetString("DecisionPlaceholder", resourceCulture);
+            }
+        }
+
+        internal static string SubmissionPlaceholder {
+            get {
+                return ResourceManager.GetString("SubmissionPlaceholder", resourceCulture);
+            }
+        }
+
+        internal static string ResolutionPlaceholder {
+            get {
+                return ResourceManager.GetString("ResolutionPlaceholder", resourceCulture);
+            }
+        }
+
+        internal static string PressEnterToContinuePrompt {
+            get {
+                return ResourceManager.GetString("PressEnterToContinuePrompt", resourceCulture);
+            }
+        }
+
+        internal static string GameOverHeader {
+            get {
+                return ResourceManager.GetString("GameOverHeader", resourceCulture);
+            }
+        }
+
+        internal static string GameOverMessage {
+            get {
+                return ResourceManager.GetString("GameOverMessage", resourceCulture);
+            }
+        }
     }
 }

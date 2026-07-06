@@ -144,4 +144,31 @@ Games available:
     <data name="LeftGameMessageFormat" xml:space="preserve">
         <value>You left the game {0}.</value>
     </data>
+    <data name="RoundHeaderFormat" xml:space="preserve">
+        <value>Round {0}/{1}</value>
+    </data>
+    <data name="MarketAnalysisPlaceholder" xml:space="preserve">
+        <value>📊 Market analysis (coming soon)</value>
+    </data>
+    <data name="SimulationPlaceholder" xml:space="preserve">
+        <value>🧮 Simulation (coming soon)</value>
+    </data>
+    <data name="DecisionPlaceholder" xml:space="preserve">
+        <value>✅ Decision (coming soon)</value>
+    </data>
+    <data name="SubmissionPlaceholder" xml:space="preserve">
+        <value>📤 Submitting choices (coming soon)</value>
+    </data>
+    <data name="ResolutionPlaceholder" xml:space="preserve">
+        <value>⏳ Resolving the round (coming soon)</value>
+    </data>
+    <data name="PressEnterToContinuePrompt" xml:space="preserve">
+        <value>Press Enter to continue...</value>
+    </data>
+    <data name="GameOverHeader" xml:space="preserve">
+        <value>🏁 Game over</value>
+    </data>
+    <data name="GameOverMessage" xml:space="preserve">
+        <value>Thanks for playing! (final scoring not implemented yet)</value>
+    </data>
 </root>

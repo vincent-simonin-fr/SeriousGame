@@ -3,36 +3,47 @@ using Shared.Models.Dtos;
 namespace Client.State;
 
 /// <summary>
-/// État de session du client : identité du joueur (persistée dans un fichier client_id_*.txt)
+/// État de session du client : identité du joueur (persistée dans un fichier client_id_&lt;pseudo&gt;.txt)
 /// et état du lobby. Injectée en Singleton - une instance pour toute l'exécution ; les mutations
 /// passent par des méthodes nommées plutôt que des setters publics, pour que chaque transition
 /// (entrer/quitter une partie...) soit un point d'appel explicite.
 /// </summary>
 public class ClientSession
 {
-    public string PlayerId { get; }
+    public string PlayerId { get; private set; } = string.Empty;
     public string? Nickname { get; private set; }
     public List<GameDto> Games { get; private set; } = [];
     public GameDto? CurrentGame { get; private set; }
 
-    public ClientSession()
+    public void Identify(string nickname)
     {
-        // Réutilise l'identité déjà persistée si un fichier existe, sinon en crée une -
-        // l'identifiant du joueur reste ainsi stable d'une exécution à l'autre.
-        var existingFile = Directory.EnumerateFiles(".", Constants.ClientIdFileSearchPattern).FirstOrDefault();
-
-        if (existingFile is not null)
-        {
-            PlayerId = File.ReadAllText(existingFile);
-        }
-        else
-        {
-            PlayerId = Guid.NewGuid().ToString();
-            File.WriteAllText(string.Format(Constants.ClientIdFilePattern, PlayerId), PlayerId);
-        }
+        Nickname = nickname;
+        PlayerId = ResolvePlayerId(nickname);
     }
 
-    public void Identify(string nickname) => Nickname = nickname;
+    private static string ResolvePlayerId(string nickname)
+    {
+        // Fichier par pseudo (et non par process) : plusieurs instances lancées depuis le même
+        // dossier - cas du test local multi-joueurs, tous via `dotnet run` dans le même répertoire -
+        // restent des joueurs distincts, tout en gardant un identifiant stable d'une exécution à
+        // l'autre pour un même pseudo (reconnexion après redémarrage).
+        var fileName = string.Format(Constants.ClientIdFilePattern, SanitizeForFileName(nickname));
+
+        if (File.Exists(fileName))
+        {
+            return File.ReadAllText(fileName);
+        }
+
+        var playerId = Guid.NewGuid().ToString();
+        File.WriteAllText(fileName, playerId);
+        return playerId;
+    }
+
+    private static string SanitizeForFileName(string nickname)
+    {
+        var invalidChars = Path.GetInvalidFileNameChars();
+        return string.Concat(nickname.Select(c => invalidChars.Contains(c) ? '_' : c));
+    }
 
     public void UpdateGames(List<GameDto> games) => Games = games;
 

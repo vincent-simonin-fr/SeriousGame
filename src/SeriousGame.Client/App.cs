@@ -1,3 +1,4 @@
+using Client.Game;
 using Client.Resources;
 using Client.Services;
 using Client.Services.Interfaces;
@@ -66,8 +67,6 @@ public class App
 
     public async Task RunAsync()
     {
-        _logger.LogDebug("Your client ID: {clientId}", _session.PlayerId);
-
         var isSuccessfullyConnected = await _lobbyServices.ConnectAsync();
 
         if (!isSuccessfullyConnected)
@@ -84,6 +83,7 @@ public class App
         // Identification côté serveur
         await _lobbyServices.IdentifyClientAsync(login);
 
+        _logger.LogDebug("Your client ID: {clientId}", _session.PlayerId);
         _logger.LogDebug("✅ Connected to the server!.");
 
         await MainMenuLoop();
@@ -197,10 +197,13 @@ public class App
                     await _lobbyServices.LeaveGameAsync();
                     ConsoleUI.WriteInfo(string.Format(ClientResources.LeftGameMessageFormat, gameName));
                 }
-                // Démarrée ou annulée : retour au menu (la boucle de partie n'existe pas encore).
+                else
+                {
+                    await new GameLoop(_session).RunAsync();
+                }
                 break;
             case EnrollmentResult.GameStarting:
-                // Point d'entrée de la future boucle de partie.
+                await new GameLoop(_session).RunAsync();
                 break;
         }
     }

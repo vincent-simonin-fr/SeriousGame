@@ -6,5 +6,4 @@ namespace Client;
 public static class Constants
 {
     public const string ClientIdFilePattern = "client_id_{0}.txt";
-    public const string ClientIdFileSearchPattern = "client_id_*.txt";
 }

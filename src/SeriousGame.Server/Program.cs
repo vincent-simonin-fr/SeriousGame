@@ -2,12 +2,15 @@ using Server.Application.Abstractions;
 using Server.Application.Services;
 using Server.Hubs;
 using Server.Infrastructure;
+using Server.Options;
 using Shared;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSignalR();
 // builder.Services.AddControllers();
+
+builder.Services.Configure<GameOptions>(builder.Configuration.GetSection("Game"));
 
 builder.Services.AddSingleton<AppMemory>();
 builder.Services.AddSingleton<IGameRepository, InMemoryGameRepository>();

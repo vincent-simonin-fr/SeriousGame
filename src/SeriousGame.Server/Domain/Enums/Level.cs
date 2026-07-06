@@ -1,4 +1,4 @@
-namespace Shared.Models.Enums;
+namespace Server.Domain.Enums;
 
 public enum Level
 {

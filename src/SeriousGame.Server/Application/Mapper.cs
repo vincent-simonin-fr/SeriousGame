@@ -1,4 +1,7 @@
-namespace Shared.Models.Dtos;
+using Server.Domain;
+using Shared.Models.Dtos;
+
+namespace Server.Application;
 
 public static class Mapper
 {

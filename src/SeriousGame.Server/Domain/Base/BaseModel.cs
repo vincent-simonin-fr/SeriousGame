@@ -1,4 +1,4 @@
-namespace Shared.Models.Base;
+namespace Server.Domain.Base;
 
 public abstract class BaseModel
 {

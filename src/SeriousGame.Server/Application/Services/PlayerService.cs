@@ -1,5 +1,5 @@
 using Server.Application.Abstractions;
-using Shared.Models;
+using Server.Domain;
 
 namespace Server.Application.Services;
 
@@ -47,17 +47,11 @@ public class PlayerService
 
     public bool RemovePlayerByConnectionId(string connectionId)
     {
-        try
-        {
-            var player = _playerRepository.GetAll().First(p => p.Id == connectionId);
-            _playerRepository.Remove(player);
-            return true;
-        }
-        catch (Exception)
-        {
-            // TODO : Logger
-            return false;
-        }
+        var player = _playerRepository.GetAll().FirstOrDefault(p => p.ConnectionId == connectionId);
+        if (player is null) return false;
+
+        _playerRepository.Remove(player);
+        return true;
     }
 
     public Player GetPlayerById(string playerId)

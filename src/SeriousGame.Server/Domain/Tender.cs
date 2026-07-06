@@ -1,6 +1,6 @@
-using Shared.Models.Base;
+using Server.Domain.Base;
 
-namespace Shared.Models;
+namespace Server.Domain;
 
 public class Tender : BaseModel
 {

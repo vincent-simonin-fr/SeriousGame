@@ -2,7 +2,7 @@
 
 [← Retour à l'index](README.md)
 
-Solution .NET 10 en quatre projets sous `src/` : `SeriousGame.Server` (ASP.NET Core + hubs SignalR, `Sdk="Microsoft.NET.Sdk.Web"`), `SeriousGame.Client` (application console/TUI utilisant `SignalR.Client`), `SeriousGame.Shared` (modèles de domaine/DTOs/abstractions référencés par les deux), plus trois projets xUnit sous `tests/`. Server et Client dépendent uniquement de Shared — jamais l'un de l'autre directement ; les contrats inter-process vivent dans `SeriousGame.Shared/Abstractions` (`ILobbyHubClient`, `ILobbyHubServer`), source de vérité pour les noms/signatures des méthodes de hub.
+Solution .NET 10 en quatre projets sous `src/` : `SeriousGame.Server` (ASP.NET Core + hubs SignalR, `Sdk="Microsoft.NET.Sdk.Web"` ; héberge aussi le modèle de domaine dans `Domain/`), `SeriousGame.Client` (application console/TUI utilisant `SignalR.Client`), `SeriousGame.Shared` (contrat réseau — DTOs/commandes/abstractions de hub — référencé par les deux), plus trois projets xUnit sous `tests/`. Server et Client dépendent uniquement de Shared — jamais l'un de l'autre directement ; les contrats inter-process vivent dans `SeriousGame.Shared/Abstractions` (`ILobbyHubClient`, `ILobbyHubServer`), source de vérité pour les noms/signatures des méthodes de hub.
 
 Les noms de projet/assembly sont `SeriousGame.Client`/`SeriousGame.Server`/`SeriousGame.Shared` (noms de fichiers csproj, dll produites), mais les namespaces C# restent `Client`/`Server`/`Shared` (chaque csproj fixe `<RootNamespace>` explicitement) — le renommage était cosmétique (nom de solution/dll), pas un changement de namespace.
 
@@ -10,13 +10,15 @@ Voir [structure du Client](client.md) et [structure du Server](server.md) pour l
 
 ## Contrat de communication : de vrais DTOs, pas les modèles de domaine bruts
 
-`ILobbyHubClient`/`ILobbyHubServer` échangent des `GameDto`/`PlayerDto` (`SeriousGame.Shared/Models/Dtos/`), pas les modèles de domaine `Game`/`Player` directement. `PlayerDto` **omet volontairement `ConnectionId`** (un identifiant de connexion SignalR interne qui fuitait auparavant vers tous les autres clients du lobby). Le mapping est centralisé dans `SeriousGame.Shared/Models/Dtos/Mapper.cs` (`Mapper.ToDto(Game)` / `Mapper.ToDto(Player)`) — c'est le seul endroit qui traduit Domain -> DTO.
+`ILobbyHubClient`/`ILobbyHubServer` échangent des `GameDto`/`PlayerDto` (`SeriousGame.Shared/Models/Dtos/`), pas les modèles de domaine `Game`/`Player` directement. `PlayerDto` **omet volontairement `ConnectionId`** (un identifiant de connexion SignalR interne qui fuitait auparavant vers tous les autres clients du lobby). Le mapping est centralisé dans `SeriousGame.Server/Application/Mapper.cs` (`Mapper.ToDto(Game)` / `Mapper.ToDto(Player)`) — c'est le seul endroit qui traduit Domain -> DTO, et il vit côté serveur puisqu'il dépend du domaine.
 
 `GameDto` n'a volontairement pas de champ `Rounds` (aucune logique de tours de jeu n'existe encore, et `Round` a une référence retour vers `Game` qui nécessiterait de casser le cycle pour sérialiser — à revoir quand le tour de jeu sera implémenté). Les payloads Client -> Server (`CreateGameCommand`, `JoinGameCommand`, `CreatePlayerCommand` dans `SeriousGame.Shared/Models/Requests`) étaient déjà façonnés comme des DTOs et restent inchangés.
 
-## Modèles partagés
+## Contrat partagé (Shared) et modèle de domaine (Server)
 
-`SeriousGame.Shared/Models/*` sont de simples classes mutables (`Game`, `Player`, `Round`, `Skill`, `Company`, `Consultant`, `Tender`, `Training`) — le modèle de domaine, utilisé côté serveur et comme source lue par `Mapper.ToDto`. `SeriousGame.Shared/Models/Dtos/*` (`GameDto`, `PlayerDto`, `Mapper`) sont les contrats réseau envoyés aux clients. `BaseModel` donne aux entités un `Id` de type GUID (string). `SeriousGame.Shared/Models/Requests/*` sont les payloads des commandes de hub (`CreateGameCommand`, `JoinGameCommand`, `CreatePlayerCommand`). `SeriousGame.Shared/HubRoutes.cs` contient les constantes de chemin de hub (`/lobby`, `/game`) pour que le `Program.cs` du Server (`MapHub`) et le constructeur d'URL de hub du Client ne codent pas en dur le même littéral chacun de leur côté.
+`SeriousGame.Shared` ne contient que le **contrat réseau** partagé par les deux bouts : les DTOs `SeriousGame.Shared/Models/Dtos/*` (`GameDto`, `PlayerDto`), les commandes `SeriousGame.Shared/Models/Requests/*` (`CreateGameCommand`, `JoinGameCommand`, `CreatePlayerCommand`), les abstractions de hub `SeriousGame.Shared/Abstractions/*` (`ILobbyHubClient`, `ILobbyHubServer`) et `SeriousGame.Shared/HubRoutes.cs` (constantes de chemin `/lobby`, `/game`, pour que le `MapHub` du Server et le constructeur d'URL du Client ne codent pas en dur le même littéral chacun de leur côté).
+
+Le **modèle de domaine** — `Game`, `Player`, `Round`, `Skill`, `Company`, `Consultant`, `Tender`, `Training`, `Contract`, `TenderApplication`, `TrainingEnrollment`, leur `BaseModel` (qui donne un `Id` GUID en string) et les énumérations — vit dans `SeriousGame.Server/Domain/` (namespaces `Server.Domain*`), avec le `Mapper` (Domain → DTO) dans `SeriousGame.Server/Application/`. Ce sont de simples classes mutables ; le Client ne les voit jamais. Détail dans [data-model.md](data-model.md).
 
 ## Design patterns utilisés (à visée pédagogique)
 
@@ -24,7 +26,7 @@ Voir [structure du Client](client.md) et [structure du Server](server.md) pour l
 - **Factory** — `GameFactory.Create` encapsule les valeurs par défaut de création d'un `Game` (le propriétaire comme premier joueur, etc.).
 - **Mapper** — `Mapper.ToDto(...)` centralise la traduction Domain → DTO en un seul endroit.
 
-Écart volontaire par rapport à la Clean Architecture "manuel scolaire" : les modèles de domaine (`Game`, `Player`, etc.) vivent dans `Shared`, pas dans un dossier `SeriousGame.Server/Domain`, car ce sont de vrais types partagés sur le réseau entre Client et Server dans cette application multijoueur — les déplacer voudrait dire dupliquer les types ou ajouter une couche de mapping supplémentaire, plus de complexité que ce que ce layering pédagogique nécessite.
+Conformément à la Clean Architecture, le modèle de domaine (`Game`, `Player`, etc.) vit dans `SeriousGame.Server/Domain`, pas dans `Shared` : le fil n'échange que des DTOs, donc le domaine n'a jamais été un type réellement partagé. `Shared` reste un assembly de contrat pur (DTOs, commandes, abstractions de hub), ce qui empêche structurellement d'envoyer une entité de domaine sur le réseau.
 
 ## Logique de flux de jeu autrefois dupliquée — maintenant consolidée
 

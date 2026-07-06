@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
-using Shared.Models;
+using Server.Domain;
 using Server.Application.Services;
 
 namespace Server.Hubs;

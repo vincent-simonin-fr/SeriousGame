@@ -4,7 +4,8 @@ Ce dossier regroupe la documentation de SeriousGame — un serious game multijou
 
 Une page par sujet, reliée par des liens plutôt que dupliquée :
 
-- **[architecture.md](architecture.md)** — le découpage en 4 projets (`SeriousGame.Server`/`SeriousGame.Client`/`SeriousGame.Shared`), le contrat de communication via DTOs, les design patterns utilisés (Repository, Factory, Mapper), et les diagrammes de séquence/classes du flux de lobby.
+- **[architecture.md](architecture.md)** — le découpage en 4 projets (`SeriousGame.Server`/`SeriousGame.Client`/`SeriousGame.Shared`), le contrat de communication via DTOs, et les diagrammes de séquence/classes du flux de lobby.
+- **[design-patterns.md](design-patterns.md)** — les design patterns utilisés dans la solution, un par un : où ils sont incarnés dans le code et ce qu'ils apportent (Observer, Factory, Adapter, Repository, Mapper, DTO, Service Layer, Options…).
 - **[data-model.md](data-model.md)** — le modèle de domaine (`SeriousGame.Shared/Models/`) : entités, relations, cycle de vie d'un tour et décisions de conception.
 - **[server.md](server.md)** — structure du projet Server : layering Application/Infrastructure, hubs.
 - **[client.md](client.md)** — structure du projet Client : state, services, conventions config/ressources.

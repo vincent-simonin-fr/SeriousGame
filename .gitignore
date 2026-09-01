@@ -18,3 +18,5 @@ openspec/
 educational/
 
 *.user
+
+.vscode

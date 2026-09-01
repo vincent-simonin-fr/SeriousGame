@@ -22,9 +22,7 @@ Le **modèle de domaine** — `Game`, `Player`, `Round`, `Skill`, `Company`, `Co
 
 ## Design patterns utilisés (à visée pédagogique)
 
-- **Repository** — `IGameRepository`/`IPlayerRepository` (Server `Application/Abstractions`) au-dessus de `InMemoryGameRepository`/`InMemoryPlayerRepository` (Server `Infrastructure`), de simples enveloppes autour des collections du singleton `AppMemory`.
-- **Factory** — `GameFactory.Create` encapsule les valeurs par défaut de création d'un `Game` (le propriétaire comme premier joueur, etc.).
-- **Mapper** — `Mapper.ToDto(...)` centralise la traduction Domain → DTO en un seul endroit.
+Recensés et expliqués un par un dans **[design-patterns.md](design-patterns.md)** (Observer, Factory, Adapter, Singleton via DI, Repository, Mapper, DTO, Service Layer, Options pattern, composition root).
 
 Conformément à la Clean Architecture, le modèle de domaine (`Game`, `Player`, etc.) vit dans `SeriousGame.Server/Domain`, pas dans `Shared` : le fil n'échange que des DTOs, donc le domaine n'a jamais été un type réellement partagé. `Shared` reste un assembly de contrat pur (DTOs, commandes, abstractions de hub), ce qui empêche structurellement d'envoyer une entité de domaine sur le réseau.
 

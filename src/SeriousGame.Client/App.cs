@@ -14,7 +14,9 @@ namespace Client;
 /// </summary>
 public class App
 {
-    private static string[] Bounce => ["⬤     ", " ⬤    ", "  ⬤   ", "   ⬤  ", "    ⬤ ", "     ⬤", "    ⬤ ", "   ⬤  ", "  ⬤   ", " ⬤    "];
+    // Un emoji occupe 2 colonnes dans le terminal : chaque frame garde le même nombre
+    // d'espaces pour que le redessin par \r de ConsoleAnimator reste aligné.
+    private static string[] Bounce => ["🚀     ", " 🚀    ", "  🚀   ", "   🚀  ", "    🚀 ", "     🚀", "    🚀 ", "   🚀  ", "  🚀   ", " 🚀    "];
 
     private readonly ILogger<App> _logger;
     private readonly ILobbyServices _lobbyServices;
